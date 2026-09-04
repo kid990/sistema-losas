@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-24T13:09:00Z",
+  "title": "Design System: SISTEMA LOSA UNHEVAL",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "UNHEVAL Blue", "canonical": "#1B6EB6", "tonalRamp": ["#0b2b48", "#11406c", "#165b8e", "#1B6EB6", "#5691d2", "#8cb3e2", "#bbd1ee", "#e8f0fe"] },
+      "accent": { "role": "accent", "displayName": "Coral Red", "canonical": "#EC5252", "tonalRamp": ["#5c1414", "#8c1f1f", "#bd2e2e", "#EC5252", "#f38080", "#f7adad", "#fbd9d9", "#fde8e8"] },
+      "security": { "role": "security", "displayName": "Security Navy", "canonical": "#003366", "tonalRamp": ["#000d1a", "#001a33", "#00264d", "#003366", "#1a4d80", "#336699", "#668cb3", "#b3c6d9"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Títulos y encabezados principales" },
+      "body": { "displayName": "Body", "purpose": "Lectura y navegación principal" }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 3px rgba(0,0,0,0.05)", "purpose": "Superficies en reposo" },
+      { "name": "shadow-md", "value": "0 4px 12px rgba(0,0,0,0.07)", "purpose": "Superficies elevadas y hover" },
+      { "name": "shadow-lg", "value": "0 10px 30px rgba(0,0,0,0.07)", "purpose": "Modales y elementos flotantes" }
+    ],
+    "motion": [
+      { "name": "fade-in-up", "value": "fadeInUp 0.45s cubic-bezier(.21,.98,.35,1)", "purpose": "Entrada de páginas y modales" },
+      { "name": "scale-in", "value": "scaleIn 0.3s cubic-bezier(.21,.98,.35,1)", "purpose": "Aparición de diálogos y popovers" }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Botón principal para llamadas a la acción e interacciones clave.",
+      "html": "<button class=\"ds-btn-primary\">CONFIRMAR RESERVA</button>",
+      "css": ".ds-btn-primary { background: #1B6EB6; color: #ffffff; padding: 12px 24px; font-weight: 500; font-size: 14px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s cubic-bezier(.4,0,.2,1); shadow: 0 4px 12px rgba(27, 110, 182, 0.2); } .ds-btn-primary:hover { background: #165b8e; transform: translateY(-1px); } .ds-btn-primary:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Card Theme",
+      "kind": "card",
+      "refersTo": "card-theme",
+      "description": "Contenedor estándar para secciones, listas e información.",
+      "html": "<div class=\"ds-card\"><h4 style=\"margin:0 0 8px 0; font-size:16px;\">Losa Deportiva #1</h4><p style=\"margin:0; font-size:14px; color:#6b7280;\">Fútbol 7 - Pasto Sintético</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.25s cubic-bezier(.4,0,.2,1); } .ds-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); transform: translateY(-2px); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Campus Athletic Hub",
+    "overview": "El sistema visual del Sistema de Losas UNHEVAL combina la sobriedad y profesionalismo de la identidad institucional universitaria con la frescura y dinamismo del deporte universitario.",
+    "keyCharacteristics": [
+      "Azul institucional UNHEVAL como eje principal",
+      "Glassmorphism con desenfoque de fondo para modales",
+      "Transiciones fluidas con curvas bézier suaves",
+      "Bordes limpios con sombras multinivel sutiles"
+    ],
+    "rules": [
+      { "name": "The 10% Accent Rule", "body": "El color rojo de acento (#EC5252) se reserva exclusivamente para acciones destructivas, errores o badges de alerta.", "section": "colors" },
+      { "name": "The Lift-On-Hover Rule", "body": "Las tarjetas interactivas se elevan -4px en el eje Y y aumentan su sombra al pasar el cursor.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do Mantener una jerarquía clara en las tablas de horario utilizando verde para disponible y rojo para ocupado.",
+      "Do Utilizar modales con backdrop de desenfoque para confirmaciones importantes.",
+      "Do Asegurar que todos los botones tengan estados de active:scale-[0.97]."
+    ],
+    "donts": [
+      "Don't Usar sombras opacas de color negro puro sin transparencia.",
+      "Don't Alterar el tono azul primario #1B6EB6 por tonos saturados no institucionales.",
+      "Don't Saturar de íconos las listas; mantener un tamaño máximo consistente de 16px-20px."
+    ]
+  }
+}

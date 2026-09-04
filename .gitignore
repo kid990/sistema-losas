@@ -1,0 +1,68 @@
+# Dependencies and package-manager caches
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+
+# Environment variables, credentials and local certificates
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.key
+*.pem
+
+# Build, framework and test outputs
+dist/
+build/
+out/
+.react-router/
+.vite/
+.cache/
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Runtime and temporary files
+logs/
+uploads/
+tmp/
+temp/
+.tmp/
+*.log
+*.pid
+*.pid.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local AI/editor tooling (not application source)
+/.agents/
+/.claude/
+/.codebase-memory/
+/.codex/
+/.cursor/
+/.impeccable/
+/agent/
+/.github/hooks/
+/CLAUDE.md
+/skills-lock.json
+
+# IDEs and editors
+.vscode/
+.idea/
+*.code-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
