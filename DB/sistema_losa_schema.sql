@@ -83,15 +83,17 @@ CREATE TABLE permisos (
     id_p INT AUTO_INCREMENT PRIMARY KEY,
     id_u INT NULL,
     id_t INT NULL,
+    id_t_decision INT NULL,
     autor ENUM('Usuario','Administrador') NOT NULL DEFAULT 'Usuario',
     tipo ENUM('Normal','Especial') NOT NULL,
     id_arch INT NULL,
-    duracion_t INT NOT NULL,
+    duracion_t INT NOT NULL CHECK (duracion_t > 0),
     estado ENUM('Pendiente','Aceptado','Rechazado','Cancelado') DEFAULT 'Pendiente',
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fecha_decision DATETIME NULL,
     FOREIGN KEY (id_u) REFERENCES users(id_u),
     FOREIGN KEY (id_t) REFERENCES trabajadores(id_t),
+    FOREIGN KEY (id_t_decision) REFERENCES trabajadores(id_t),
     FOREIGN KEY (id_arch) REFERENCES archivos(id_arch) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -103,9 +105,11 @@ CREATE TABLE detalle_permisos (
     fecha DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fin TIME NOT NULL,
-    duracion INT NOT NULL,
+    duracion INT NOT NULL CHECK (duracion > 0),
+    CHECK (hora_fin > hora_inicio),
     FOREIGN KEY (id_p) REFERENCES permisos(id_p),
-    FOREIGN KEY (id_l) REFERENCES losas(id_l)
+    FOREIGN KEY (id_l) REFERENCES losas(id_l),
+    INDEX idx_detalle_conflicto (id_l, fecha, hora_inicio, hora_fin)
 ) ENGINE=InnoDB;
 
 -- 8. NOTIFICACIONES
@@ -187,4 +191,3 @@ CREATE TABLE password_reset_tokens (
     INDEX idx_user (user_id, user_type),
     INDEX idx_expiry (expires_at, used_at)
 ) ENGINE=InnoDB;
-

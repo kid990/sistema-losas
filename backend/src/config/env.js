@@ -1,5 +1,10 @@
 require("dotenv").config();
 
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === "") return fallback;
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
+}
+
 const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: parseInt(process.env.PORT || "3000", 10),
@@ -17,18 +22,25 @@ const env = {
 
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:5173",
+  UNHEVAL_API_URL: process.env.UNHEVAL_API_URL || "http://localhost:3001/api",
 
-  STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT || "",
-  STORAGE_REGION: process.env.STORAGE_REGION || "us-east-1",
-  STORAGE_ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID || "",
-  STORAGE_SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY || "",
-  STORAGE_BUCKET: process.env.STORAGE_BUCKET || "",
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || "",
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || "",
+  S3_ENDPOINT: process.env.S3_ENDPOINT || "",
+  S3_REGION: process.env.S3_REGION || "us-west-004",
+  S3_BUCKET: process.env.S3_BUCKET || "",
+  S3_KEY_PREFIX: process.env.S3_KEY_PREFIX || "documentos",
+  S3_IMAGE_KEY_PREFIX: process.env.S3_IMAGE_KEY_PREFIX || "imagenes",
+  S3_DOCUMENT_KEY_PREFIX: process.env.S3_DOCUMENT_KEY_PREFIX || "documentos",
+  S3_FORCE_PATH_STYLE: parseBoolean(process.env.S3_FORCE_PATH_STYLE, false),
+  S3_SIGNED_URL_EXPIRES_SECONDS: parseInt(process.env.S3_SIGNED_URL_EXPIRES_SECONDS || "900", 10),
 
-  SMTP_HOST: process.env.SMTP_HOST || "",
-  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
-  SMTP_USER: process.env.SMTP_USER || "",
-  SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
-  SMTP_FROM: process.env.SMTP_FROM || "noreply@unheval.edu",
+  MAIL_HOST: process.env.MAIL_HOST || "",
+  MAIL_PORT: parseInt(process.env.MAIL_PORT || "587", 10),
+  MAIL_SECURE: parseBoolean(process.env.MAIL_SECURE, false),
+  MAIL_USER: process.env.MAIL_USER || "",
+  MAIL_PASSWORD: process.env.MAIL_PASSWORD || "",
+  MAIL_FROM: process.env.MAIL_FROM || "noreply@unheval.edu",
   MAIL_LOG_FILE: process.env.MAIL_LOG_FILE || "mail.log",
 
   RENIEC_API_TOKEN: process.env.RENIEC_API_TOKEN || "",

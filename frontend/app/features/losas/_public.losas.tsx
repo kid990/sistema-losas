@@ -4,7 +4,13 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import Swal from "sweetalert2";
 import { requireAuth } from "~/services/auth.server";
-import { api, ApiError, responseHeadersWithCookies } from "~/services/api.server";
+import { api, responseHeadersWithCookies } from "~/services/api.server";
+import {
+  normalizeReservationApiError,
+  reservationErrorMessage,
+  reservationErrorTitle,
+  type ReservationErrorPayload,
+} from "~/lib/reservation-errors";
 import { Button, Modal, Select, Badge } from "~/shared/components/ui";
 import {
   FaMapMarkerAlt,
@@ -141,13 +147,18 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       return data({ ok: true }, { headers: responseHeadersWithCookies(request) });
     } catch (err) {
-      if (err instanceof ApiError) {
-        return data(
-          { ok: false, error: err.message },
-          { status: err.status, headers: responseHeadersWithCookies(request) },
-        );
-      }
-      return data({ ok: false, error: "No se pudo registrar la reserva" }, { status: 500 });
+      if (err instanceof Response) throw err;
+      const normalized = normalizeReservationApiError(err, "No se pudo registrar la reserva");
+      return data(
+        {
+          ok: false,
+          error: normalized.payload.message,
+          code: normalized.payload.code,
+          details: normalized.payload.details,
+          conflicts: normalized.payload.conflicts,
+        },
+        { status: normalized.status, headers: responseHeadersWithCookies(request) },
+      );
     }
   }
 
@@ -342,12 +353,6 @@ export default function LosasUser() {
     e.preventDefault();
     if (!selectedHorario || !modalLosa || !userId) return;
     setLoadingReserva(true);
-    Swal.fire({
-      title: "Procesando reserva...",
-      text: "Generando tu permiso de uso.",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
 
     const [horaInicio, horaFin] = selectedHorario.split("-").map(Number);
     const detalles = [
@@ -361,13 +366,18 @@ export default function LosasUser() {
     ];
     const fd = new FormData();
     fd.append("intent", "reservar");
+    fd.append("tipo", "Normal");
     fd.append("detalles", JSON.stringify(detalles));
 
     try {
-      const res = await fetch("", { method: "post", body: fd });
-      const result = await res.json().catch(() => ({}));
+      const res = await fetch("/api/reservas", { method: "post", body: fd });
+      const result = (await res.json().catch(() => ({}))) as ReservationErrorPayload & {
+        ok?: boolean;
+      };
       if (!res.ok || result.ok === false) {
-        throw new Error(result.error || "Error al procesar reserva");
+        const error = new Error(reservationErrorMessage(result)) as Error & { code?: string };
+        error.code = result.code;
+        throw error;
       }
       Swal.fire({
         icon: "success",
@@ -380,10 +390,16 @@ export default function LosasUser() {
       setModalLosa(null);
       revalidator.revalidate();
     } catch (err) {
-      Swal.fire({
+      const reservationError = err as Error & { code?: string };
+      setShowModal(false);
+      void Swal.fire({
+        toast: true,
+        position: "top-end",
         icon: "error",
-        title: "No se pudo reservar",
-        text: (err as Error).message || "Ocurrió un error al registrar la reserva",
+        title: reservationErrorTitle(reservationError.code),
+        text: reservationError.message || "Ocurrió un error al registrar la reserva",
+        showConfirmButton: false,
+        showCloseButton: true,
       });
     } finally {
       setLoadingReserva(false);

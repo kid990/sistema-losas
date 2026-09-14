@@ -15,7 +15,7 @@ const verifyToken = (req, res, next) => {
   const token = cookieToken || bearerToken;
 
   if (!token) {
-    return res.status(403).json({ message: "Token requerido" });
+    return res.status(401).json({ message: "Token requerido", code: "AUTH_TOKEN_REQUIRED" });
   }
 
   try {
@@ -37,7 +37,7 @@ const verifyToken = (req, res, next) => {
 const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(403).json({ message: "Token requerido" });
+      return res.status(401).json({ message: "Token requerido", code: "AUTH_TOKEN_REQUIRED" });
     }
     if (!roles.includes(req.user.rol)) {
       return res.status(403).json({ message: "No tienes permisos para esta acción" });

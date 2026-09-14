@@ -1,5 +1,6 @@
 const pool = require("../../config/db");
 const { AppError } = require("../../shared/middlewares/error.middleware");
+const { getSignedStoredObjectUrl } = require("../../utils/storage");
 
 async function obtenerLosas() {
   const [rows] = await pool.query(
@@ -45,11 +46,13 @@ async function obtenerLosasConDisciplinaYImagenes(id_l) {
   return {
     ...losa,
     nombre_disciplina: disciplinas[0] ? disciplinas[0].nombre : "Sin disciplina",
-    imagenes: imagenesList.map((img) => ({
-      id_img: img.id_img,
-      nombre_imagen: img.nombre,
-      foto: img.url,
-    })),
+    imagenes: await Promise.all(
+      imagenesList.map(async (img) => ({
+        id_img: img.id_img,
+        nombre_imagen: img.nombre,
+        foto: await getSignedStoredObjectUrl(img.url),
+      }))
+    ),
   };
 }
 

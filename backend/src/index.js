@@ -1,8 +1,9 @@
 const express = require("express");
+const crypto = require("crypto");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const { env } = require("./config/env");
 const { errorHandler } = require("./shared/middlewares/error.middleware");
 
@@ -27,11 +28,21 @@ const app = express();
 
 // Seguridad
 app.use(helmet());
+app.use(cookieParser(env.COOKIE_SECRET));
 
-// Rate limiting global
+// Limita por sesión autenticada para que el SSR no agrupe a todos los usuarios
+// bajo la misma IP. Las peticiones anónimas continúan limitándose por IP.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 600,
+  keyGenerator: (req) => {
+    const accessToken = req.signedCookies?.accessToken;
+    if (accessToken) {
+      const tokenHash = crypto.createHash("sha256").update(accessToken).digest("hex");
+      return `session:${tokenHash}`;
+    }
+    return `ip:${ipKeyGenerator(req.ip)}`;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -73,9 +84,6 @@ app.use(
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Cookies firmadas
-app.use(cookieParser(env.COOKIE_SECRET));
 
 // =========================================
 // Health Check

@@ -4,10 +4,11 @@ const { env, isProd } = require("../../config/env");
  * Clase de error personalizada con código HTTP
  */
 class AppError extends Error {
-  constructor(message, statusCode = 500, code) {
+  constructor(message, statusCode = 500, code, details) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+    this.details = details;
     this.name = "AppError";
   }
 }
@@ -25,6 +26,7 @@ const errorHandler = (err, req, res, next) => {
   if (err instanceof AppError) {
     const response = { message: err.message };
     if (err.code) response.code = err.code;
+    if (err.details) response.details = err.details;
     if (err.conflicts) response.conflicts = err.conflicts;
     res.status(err.statusCode).json(response);
     return;

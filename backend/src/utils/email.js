@@ -8,14 +8,14 @@ let transporter = null;
 function getTransporter() {
   if (transporter) return transporter;
 
-  if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD) {
+  if (env.MAIL_HOST && env.MAIL_USER && env.MAIL_PASSWORD) {
     transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
+      host: env.MAIL_HOST,
+      port: env.MAIL_PORT,
+      secure: env.MAIL_SECURE,
       auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASSWORD,
+        user: env.MAIL_USER,
+        pass: env.MAIL_PASSWORD,
       },
     });
   } else {
@@ -32,7 +32,7 @@ async function enviarCorreo({ para, asunto, texto, html }) {
   try {
     const transport = getTransporter();
     const mailOptions = {
-      from: env.SMTP_FROM,
+      from: env.MAIL_FROM,
       to: para,
       subject: asunto,
       text: texto,

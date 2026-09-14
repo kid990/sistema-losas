@@ -51,7 +51,7 @@ export default function Login() {
             </p>
           </div>
 
-          <Form method="post" className="space-y-5">
+          <Form method="post" action="/login" className="space-y-5">
             {/* Campo Usuario / Correo */}
             <div>
               <div className="mb-1.5">

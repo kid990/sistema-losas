@@ -7,6 +7,12 @@ import { FaEye, FaFilePdf, FaCheck, FaTimes, FaUndo, FaSearch, FaFilter } from "
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import { API_BASE_URL } from "~/lib/constants";
+import {
+  normalizeReservationApiError,
+  reservationErrorMessage,
+  reservationErrorTitle,
+  type ReservationErrorPayload,
+} from "~/lib/reservation-errors";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
 import { Button, Input, Modal, Select, Badge, Spinner } from "~/shared/components/ui";
 import { formatFecha, formatFechaHora } from "~/shared/utils/format";
@@ -36,15 +42,29 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "cambiarEstado") {
-    const res = await api.put(`/permisos/${fd.get("id_p")}/estado`, request, {
-      estado: fd.get("estado"),
-      id_t: Number(fd.get("id_t") || 0),
-    });
-    return data({ ok: true, message: (res as Record<string, unknown>).message || "Estado actualizado" });
+    try {
+      const res = await api.put(`/permisos/${fd.get("id_p")}/estado`, request, {
+        estado: fd.get("estado"),
+      });
+      return data({ ok: true, message: (res as Record<string, unknown>).message || "Estado actualizado" });
+    } catch (error) {
+      if (error instanceof Response) throw error;
+      const normalized = normalizeReservationApiError(error, "No se pudo actualizar el permiso");
+      return data(
+        {
+          ok: false,
+          error: normalized.payload.message,
+          code: normalized.payload.code,
+          details: normalized.payload.details,
+          conflicts: normalized.payload.conflicts,
+        },
+        { status: normalized.status },
+      );
+    }
   }
 
   if (intent === "documento") {
-    const res = await api.get(`/permisos/documento/${fd.get("id_p")}`, request);
+    const res = await api.get(`/permisos/${fd.get("id_p")}/documento`, request);
     return data({ ok: true, data: res });
   }
 
@@ -122,7 +142,15 @@ export default function AdminPermisos() {
       fd.append("intent", "cambiarEstado");
       fd.append("id_p", String(idP));
       fd.append("estado", nuevoEstado);
-      await fetch("", { method: "post", body: fd });
+      const response = await fetch("", { method: "post", body: fd });
+      const result = (await response.json().catch(() => ({}))) as ReservationErrorPayload & {
+        ok?: boolean;
+      };
+      if (!response.ok || result.ok === false) {
+        const error = new Error(reservationErrorMessage(result)) as Error & { code?: string };
+        error.code = result.code;
+        throw error;
+      }
       revalidate();
       Swal.fire({
         icon: "success",
@@ -131,11 +159,13 @@ export default function AdminPermisos() {
         timer: 1600,
         showConfirmButton: false,
       });
-    } catch {
+    } catch (error) {
+      const reservationError = error as Error & { code?: string };
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "No se pudo actualizar el estado de la solicitud.",
+        title: reservationErrorTitle(reservationError.code),
+        text: reservationError.message || "No se pudo actualizar el estado de la solicitud.",
+        confirmButtonText: "Entendido",
       });
     }
   };
@@ -200,7 +230,7 @@ export default function AdminPermisos() {
     {
       name: "Adjunto",
       cell: (r: Record<string, unknown>) =>
-        r.tipo === "Especial" && r.url_drive ? (
+        r.tipo === "Especial" && r.tiene_documento ? (
           <button
             type="button"
             onClick={() => verDocumento(r.id_p as number)}

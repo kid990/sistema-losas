@@ -77,7 +77,7 @@ async function apiFetch(
       code?: string;
     };
 
-    if (err.code === "TOKEN_EXPIRED") {
+    if (err.code === "TOKEN_EXPIRED" || err.code === "AUTH_TOKEN_REQUIRED") {
       const refreshed = await refreshTokensOnce(request);
       if (refreshed) {
         // Propagar las nuevas cookies (access + refresh) al navegador

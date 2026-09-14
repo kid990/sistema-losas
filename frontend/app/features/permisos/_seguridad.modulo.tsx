@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "documento") {
-    const res = await api.get(`/permisos/documento/${fd.get("id_p")}`, request);
+    const res = await api.get(`/permisos/${fd.get("id_p")}/documento`, request);
     return data({ ok: true, data: res });
   }
 
@@ -128,7 +128,7 @@ export default function SeguridadModulo() {
     {
       name: "Autorización",
       cell: (r: Record<string, unknown>) =>
-        r.tipo === "Especial" && r.url_drive ? (
+        r.tipo === "Especial" && r.tiene_documento ? (
           <button
             type="button"
             onClick={() => verDocumento(r.id_p as number)}

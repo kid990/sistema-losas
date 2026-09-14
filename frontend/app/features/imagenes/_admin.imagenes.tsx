@@ -5,8 +5,7 @@ import { data } from "react-router";
 import Swal from "sweetalert2";
 import { FaTrash, FaPlus, FaEye, FaFilter } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
-import { api } from "~/services/api.server";
-import { API_BASE_URL } from "~/lib/constants";
+import { api, ApiError, responseHeadersWithCookies } from "~/services/api.server";
 import { Button, Modal, Select } from "~/shared/components/ui";
 
 function getImageSrc(foto: string) {
@@ -33,32 +32,32 @@ export async function action({ request }: ActionFunctionArgs) {
   const fd = await request.formData();
   const intent = fd.get("intent") as string;
 
-  if (intent === "upload") {
-    const imageFile = fd.get("imagen") as File;
-    const id_l = fd.get("id_l") as string;
+  try {
+    if (intent === "upload") {
+      const imageFile = fd.get("imagen") as File;
+      const id_l = fd.get("id_l") as string;
 
-    const uploadForm = new FormData();
-    uploadForm.append("imagen", imageFile);
-    uploadForm.append("id_l", id_l);
-
-    // El token viaja en cookie httpOnly del backend: reenviar la cookie
-    const res = await fetch(`${API_BASE_URL}/imagenes/upload`, {
-      method: "POST",
-      headers: { Cookie: request.headers.get("Cookie") || "" },
-      body: uploadForm,
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: "Error" }));
-      return data({ error: err.message || "Error al subir" }, { status: res.status });
+      const uploadForm = new FormData();
+      uploadForm.append("imagen", imageFile);
+      uploadForm.append("id_l", id_l);
+      await api.postForm("/imagenes/upload", request, uploadForm);
     }
+
+    if (intent === "delete") {
+      await api.delete(`/imagenes/${fd.get("id_img")}`, request);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No se pudo procesar la imagen";
+    return data(
+      { ok: false, error: message },
+      {
+        status: error instanceof ApiError ? error.status : 500,
+        headers: responseHeadersWithCookies(request),
+      },
+    );
   }
 
-  if (intent === "delete") {
-    await api.delete(`/imagenes/${fd.get("id_img")}`, request);
-  }
-
-  return data({ ok: true });
+  return data({ ok: true }, { headers: responseHeadersWithCookies(request) });
 }
 
 export default function AdminImagenes() {
@@ -88,6 +87,14 @@ export default function AdminImagenes() {
       });
       return;
     }
+    if (!["image/jpeg", "image/png"].includes(selectedFile.type) || selectedFile.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: "warning",
+        title: "Imagen no válida",
+        text: "Selecciona una imagen JPG o PNG de hasta 5 MB.",
+      });
+      return;
+    }
 
     setIsUploading(true);
     Swal.fire({
@@ -105,7 +112,7 @@ export default function AdminImagenes() {
     try {
       const res = await fetch("", { method: "post", body: fd });
       const result = await res.json();
-      if (result.error) {
+      if (!res.ok || result.ok === false || result.error) {
         Swal.fire({ icon: "error", title: "Error al subir", text: result.error });
       } else {
         Swal.fire({
@@ -149,7 +156,11 @@ export default function AdminImagenes() {
       const fd = new FormData();
       fd.append("intent", "delete");
       fd.append("id_img", String(img.id_img));
-      await fetch("", { method: "post", body: fd });
+      const res = await fetch("", { method: "post", body: fd });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result.ok === false) {
+        throw new Error(result.error || "No se pudo eliminar la imagen");
+      }
       revalidate();
       Swal.fire({
         icon: "success",
@@ -158,11 +169,11 @@ export default function AdminImagenes() {
         timer: 1500,
         showConfirmButton: false,
       });
-    } catch {
+    } catch (error) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudo eliminar la imagen seleccionada.",
+        text: error instanceof Error ? error.message : "No se pudo eliminar la imagen seleccionada.",
       });
     }
   };
@@ -265,7 +276,7 @@ export default function AdminImagenes() {
             </label>
             <input
               type="file"
-              accept=".jpg,.jpeg,.png"
+              accept="image/jpeg,image/png,.jpg,.jpeg,.png"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
               className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[var(--color-primary-50)] file:text-[var(--color-primary-600)] hover:file:bg-[var(--color-primary-100)] cursor-pointer"
               required

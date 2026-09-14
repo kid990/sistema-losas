@@ -3,7 +3,13 @@ import { useLoaderData, useRevalidator, data } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import Swal from "sweetalert2";
 import { requireAuth } from "~/services/auth.server";
-import { api, ApiError, responseHeadersWithCookies } from "~/services/api.server";
+import { api, responseHeadersWithCookies } from "~/services/api.server";
+import {
+  normalizeReservationApiError,
+  reservationErrorMessage,
+  reservationErrorTitle,
+  type ReservationErrorPayload,
+} from "~/lib/reservation-errors";
 import { Button, Modal, Select, Badge } from "~/shared/components/ui";
 import {
   FaCheck,
@@ -168,15 +174,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
       return data({ ok: true }, { headers: responseHeadersWithCookies(request) });
     } catch (err) {
-      if (err instanceof ApiError) {
-        return data(
-          { ok: false, error: err.message },
-          { status: err.status, headers: responseHeadersWithCookies(request) },
-        );
-      }
+      if (err instanceof Response) throw err;
+      const normalized = normalizeReservationApiError(err, "No se pudo registrar el permiso");
       return data(
-        { ok: false, error: "No se pudo registrar el permiso" },
-        { status: 500, headers: responseHeadersWithCookies(request) },
+        {
+          ok: false,
+          error: normalized.payload.message,
+          code: normalized.payload.code,
+          details: normalized.payload.details,
+          conflicts: normalized.payload.conflicts,
+        },
+        { status: normalized.status, headers: responseHeadersWithCookies(request) },
       );
     }
   }
@@ -306,12 +314,6 @@ export default function HorarioPublic() {
     }
 
     setLoading(true);
-    Swal.fire({
-      title: "Solicitando permiso...",
-      text: "Guardando tu solicitud en el sistema",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
 
     const fd = new FormData();
     fd.append("intent", "reservar");
@@ -334,10 +336,14 @@ export default function HorarioPublic() {
     if (documento) fd.append("documento", documento);
 
     try {
-      const res = await fetch("", { method: "post", body: fd });
-      const result = await res.json().catch(() => ({}));
+      const res = await fetch("/api/reservas", { method: "post", body: fd });
+      const result = (await res.json().catch(() => ({}))) as ReservationErrorPayload & {
+        ok?: boolean;
+      };
       if (!res.ok || result.ok === false) {
-        throw new Error(result.error || result.message || "Error al procesar reserva");
+        const error = new Error(reservationErrorMessage(result)) as Error & { code?: string };
+        error.code = result.code;
+        throw error;
       }
       Swal.fire({
         icon: "success",
@@ -352,10 +358,15 @@ export default function HorarioPublic() {
       setDocumento(null);
       await revalidate();
     } catch (err) {
-      Swal.fire({
+      const reservationError = err as Error & { code?: string };
+      void Swal.fire({
+        toast: true,
+        position: "top-end",
         icon: "error",
-        title: "No se pudo reservar",
-        text: (err as Error).message || "Ocurrió un error al registrar la reserva",
+        title: reservationErrorTitle(reservationError.code),
+        text: reservationError.message || "Ocurrió un error al registrar la reserva",
+        showConfirmButton: false,
+        showCloseButton: true,
       });
     } finally {
       setLoading(false);
@@ -416,7 +427,7 @@ export default function HorarioPublic() {
           <div className="flex items-start gap-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 text-sm text-[var(--text-secondary)]">
             <FaInfoCircle className="mt-0.5 shrink-0 text-[var(--color-primary-500)]" aria-hidden="true" />
             <p>
-              Puedes reservar hasta <strong className="text-[var(--text-primary)]">{config.max_horas_semana} {config.max_horas_semana === 1 ? "hora" : "horas"} por semana</strong>. Restricción para hoy: <strong className="text-[var(--text-primary)]">{config.restriccion_hoy || "sin restricción adicional"}</strong>.
+              Tu grupo (mismo año y escuela) puede reservar hasta <strong className="text-[var(--text-primary)]">{config.max_horas_semana} {config.max_horas_semana === 1 ? "hora" : "horas"} por semana</strong>. Restricción para hoy: <strong className="text-[var(--text-primary)]">{config.restriccion_hoy || "sin restricción adicional"}</strong>.
             </p>
           </div>
         )}

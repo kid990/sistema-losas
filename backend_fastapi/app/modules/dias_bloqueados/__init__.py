@@ -1,0 +1,1 @@
+"""Gestión de días bloqueados."""

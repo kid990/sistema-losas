@@ -321,7 +321,7 @@ export default function AdminConfiguracion() {
             />
             <Input
               name="max_horas_semana"
-              label="Máximo de Horas por Semana por Usuario *"
+              label="Máximo de Horas por Semana por Grupo (Año y Escuela) *"
               type="number"
               min={1}
               max={40}

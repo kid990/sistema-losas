@@ -5,13 +5,15 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "verify:s3": "node scripts/verify-s3.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1090.0",
+    "@aws-sdk/s3-request-presigner": "^3.1131.0",
     "axios": "^1.18.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",

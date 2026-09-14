@@ -10,7 +10,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 // Los tokens JWT viven en cookies httpOnly del backend. El refresh es
-// reactivo: api.server.ts detecta 401 TOKEN_EXPIRED, renueva y reintenta.
+// reactivo: api.server.ts detecta un access token ausente o expirado, renueva y reintenta.
 export async function loader() {
   return null;
 }

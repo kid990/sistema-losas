@@ -17,7 +17,13 @@ async function registrarPermiso(req, res) {
     });
   } catch (error) {
     if (error instanceof AppError) {
-      return res.status(error.statusCode).json({ success: false, message: error.message, conflicts: error.conflicts });
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        conflicts: error.conflicts,
+      });
     }
     console.error("Error al registrar permiso:", error);
     res.status(500).json({ success: false, message: "Error interno del servidor" });
@@ -42,7 +48,13 @@ async function obtenerDetallesPermisoEspecifico(req, res) {
     const data = await PermisoService.obtenerDetallesPermisoEspecifico(Number(id_p), userId);
     res.json({ success: true, data });
   } catch (error) {
-    if (error instanceof AppError) return res.status(error.statusCode).json({ success: false, message: error.message });
+    if (error instanceof AppError) return res.status(error.statusCode).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      conflicts: error.conflicts,
+    });
     console.error("Error al obtener detalles del permiso:", error);
     res.status(500).json({ success: false, message: "Error interno" });
   }
@@ -81,11 +93,19 @@ async function getAllPermisosAceptados(req, res) {
 async function actualizarEstado(req, res) {
   try {
     const id_p = Number(req.params.id);
-    const { estado, id_t } = req.body;
-    const data = await PermisoService.actualizarEstado(id_p, estado, Number(id_t));
+    const { estado } = req.body;
+    const data = await PermisoService.actualizarEstado(id_p, estado, Number(req.user.id));
     res.json(data);
   } catch (error) {
-    if (error instanceof AppError) return res.status(error.statusCode).json({ success: false, message: error.message });
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        conflicts: error.conflicts,
+      });
+    }
     console.error("Error al actualizar permiso:", error);
     res.status(500).json({ success: false, message: "Error al actualizar permiso" });
   }
@@ -125,10 +145,20 @@ async function createPermisoTrabajador(req, res) {
     const data = await PermisoService.createPermisoTrabajador({
       id_t: Number(id_t), tipo, duracion_t: Number(duracion_t),
       detalles: typeof detalles === "string" ? JSON.parse(detalles) : detalles,
+      file: req.file,
+      approverId: Number(req.user.id),
     });
     res.status(201).json({ success: true, message: "Permiso registrado correctamente", data });
   } catch (error) {
-    if (error instanceof AppError) return res.status(error.statusCode).json({ success: false, message: error.message });
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        conflicts: error.conflicts,
+      });
+    }
     console.error("Error al registrar permiso como trabajador:", error);
     res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
