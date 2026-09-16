@@ -21,6 +21,7 @@ import {
   FaVolleyballBall,
   FaTableTennis,
   FaBasketballBall,
+  FaCalendarCheck,
 } from "react-icons/fa";
 
 type LosaItem = {
@@ -165,35 +166,44 @@ export async function action({ request }: ActionFunctionArgs) {
   return data({ ok: false, error: "Acción no válida" }, { status: 400 });
 }
 
+function getImageSrc(foto: string) {
+  if (!foto) return "";
+  if (foto.startsWith("data:image") || foto.startsWith("blob:") || foto.startsWith("http")) return foto;
+  if (/^[A-Za-z0-9+/=]+$/.test(foto)) return `data:image/jpeg;base64,${foto}`;
+  return foto;
+}
+
 function GaleriaLosa({ losa }: { losa: LosaDetallada }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const images = losa.imagenes || [];
-  const fotoPrincipal = images[selectedImageIndex]?.foto || images[0]?.foto || "";
+  const rawFoto = images[selectedImageIndex]?.foto || images[0]?.foto || "";
+  const fotoPrincipal = getImageSrc(rawFoto);
 
   if (images.length === 0) {
     return (
-      <div className="aspect-4/3 flex flex-col items-center justify-center text-[var(--text-muted)] bg-[var(--bg-surface)] p-6 text-center">
-        <svg className="w-12 h-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="aspect-4/3 flex flex-col items-center justify-center text-[var(--text-muted)] bg-[var(--bg-surface)] p-6 text-center rounded-2xl border border-[var(--border-color)]">
+        <svg className="w-12 h-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <p className="text-sm font-medium">No hay fotos disponibles para esta losa.</p>
+        <p className="text-sm font-medium">Sin fotografías registradas</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
-      <div className="relative aspect-4/3 w-full">
+    <div className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-slate-900 shadow-sm">
+      <div className="relative aspect-4/3 w-full bg-slate-100">
         <img
           src={fotoPrincipal}
           alt={`Fotografía de ${losa.nombre}`}
+          loading="eager"
           decoding="async"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-opacity duration-200"
           onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/800x600?text=Sin+imagen"; }}
         />
       </div>
       {images.length > 1 && (
-        <div className="flex gap-2 p-3 overflow-x-auto border-t border-[var(--border-color)]">
+        <div className="flex gap-2 p-3 overflow-x-auto bg-white border-t border-[var(--border-color)]">
           {images.map((img, i) => (
             <button
               key={img.id_img ?? i}
@@ -201,10 +211,10 @@ function GaleriaLosa({ losa }: { losa: LosaDetallada }) {
               onClick={() => setSelectedImageIndex(i)}
               aria-label={`Ver foto ${i + 1} de la losa`}
               className={`relative shrink-0 w-20 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                selectedImageIndex === i ? "border-[var(--color-primary-500)] ring-2 ring-[var(--color-primary-500)]/20" : "border-transparent opacity-70 hover:opacity-100"
+                selectedImageIndex === i ? "border-[var(--color-primary-500)] ring-2 ring-[var(--color-primary-500)]/20 scale-105" : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
-              <img src={img.foto as string} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              <img src={getImageSrc(img.foto as string)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
@@ -217,60 +227,84 @@ function LosaCard({ losa, onSolicitar }: { losa: LosaDetallada; onSolicitar: (lo
   const disponible = !losa.estado || losa.estado === "Disponible";
 
   return (
-    <article className="card-theme overflow-hidden">
-      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 items-start p-4 sm:p-6 lg:p-8">
-        <GaleriaLosa losa={losa} />
+    <article className="card-theme overflow-hidden hover-lift border border-slate-200/80 shadow-md">
+      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-12 gap-6 items-start p-5 sm:p-7">
+        {/* Galería de imágenes (5 cols) */}
+        <div className="lg:col-span-5 min-w-0">
+          <GaleriaLosa losa={losa} />
+        </div>
 
-        <div className="min-w-0 space-y-6">
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
-            <div className="min-w-0">
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--text-primary)] break-words">
-                {losa.nombre}
-              </h3>
-              <p className="text-sm font-medium text-[var(--text-secondary)] mt-0.5">
-                Número de campo: <span className="font-semibold text-[var(--text-primary)] break-words">{losa.numero_l}</span>
-              </p>
+        {/* Información y Ficha Técnica (7 cols) */}
+        <div className="lg:col-span-7 min-w-0 flex flex-col justify-between h-full space-y-5">
+          <div>
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#1B6EB6] border border-blue-200/60 mb-1.5">
+                  Campo {losa.numero_l || `#${losa.id_l}`}
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight break-words">
+                  {losa.nombre}
+                </h3>
+              </div>
+              <Badge variant="success" dot>Disponible</Badge>
             </div>
-            <Badge variant="success" dot>Disponible</Badge>
+
+            {/* Ficha técnica en cuadrícula 2x2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="w-8 h-8 rounded-lg bg-blue-100 text-[#1B6EB6] flex items-center justify-center shrink-0 text-xs">
+                  <FaMapMarkerAlt />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Ubicación</span>
+                  <span className="text-xs font-semibold text-slate-700 block truncate">{losa.ubicacion || "Complejo UNHEVAL"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-xs">
+                  <FaRulerCombined />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Dimensiones</span>
+                  <span className="text-xs font-semibold text-slate-700 block truncate">{losa.dimensiones || "Reglamentaria"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xs">
+                  <FaRunning />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Superficie</span>
+                  <span className="text-xs font-semibold text-slate-700 block truncate">{losa.superficie || "Sintético / Cemento"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xs">
+                  <FaLightbulb />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Iluminación</span>
+                  <span className="text-xs font-semibold text-slate-700 block truncate">{losa.iluminacion || "Reflectores LED"}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <Button
-            onClick={() => onSolicitar(losa)}
-            disabled={!disponible}
-            className="w-fit"
-          >
-            Solicitar permiso
-          </Button>
-
-          <div className="space-y-3.5 border-t border-[var(--border-color)] pt-6 text-sm">
-            <div className="flex items-start gap-3">
-              <FaMapMarkerAlt className="text-[var(--color-primary-500)] mt-1 shrink-0" />
-              <div>
-                 <span className="text-xs font-semibold text-[var(--text-muted)] block">Ubicación</span>
-                 <span className="text-[var(--text-primary)] font-medium break-words">{losa.ubicacion || "No informado"}</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <FaRulerCombined className="text-[var(--color-primary-500)] mt-1 shrink-0" />
-              <div>
-                <span className="text-xs font-semibold text-[var(--text-muted)] block">Dimensiones</span>
-                <span className="text-[var(--text-primary)] font-medium break-words">{losa.dimensiones || "No informado"}</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <FaRunning className="text-[var(--color-primary-500)] mt-1 shrink-0" />
-              <div>
-                <span className="text-xs font-semibold text-[var(--text-muted)] block">Superficie</span>
-                <span className="text-[var(--text-primary)] font-medium break-words">{losa.superficie || "No informado"}</span>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <FaLightbulb className="text-[var(--color-primary-500)] mt-1 shrink-0" />
-              <div>
-                <span className="text-xs font-semibold text-[var(--text-muted)] block">Iluminación</span>
-                <span className="text-[var(--text-primary)] font-medium break-words">{losa.iluminacion || "No informado"}</span>
-              </div>
-            </div>
+          <div className="pt-2 flex items-center justify-between gap-4 border-t border-slate-100">
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+              ⚡ Reserva inmediata para el día de hoy
+            </span>
+            <button
+              type="button"
+              onClick={() => onSolicitar(losa)}
+              disabled={!disponible}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#1B6EB6] to-[#165b9a] shadow-md shadow-blue-500/20 hover:scale-[1.02] hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all ml-auto w-full sm:w-auto"
+            >
+              <FaCalendarCheck size={13} /> Solicitar Permiso
+            </button>
           </div>
         </div>
       </div>
@@ -407,19 +441,31 @@ export default function LosasUser() {
   };
 
   return (
-    <div className="min-w-0">
-      <div className="mb-5 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-theme-primary break-words">Explorar losas deportivas</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Selecciona una disciplina para ver todas sus losas, consultar la ficha técnica y solicitar tu reserva para hoy.
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center shadow-md shadow-blue-200 text-xl font-bold">
+            🏟️
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Explorar Losas Deportivas
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Selecciona una disciplina para ver sus campos, consultar la ficha técnica y reservar
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Menú de disciplinas */}
-      <div className="card-theme p-3 sm:p-5 mb-5 sm:mb-8 min-w-0">
-        <p className="text-xs font-semibold text-[var(--text-muted)] mb-3">
-          Disciplinas disponibles:
-        </p>
+      <div className="card-theme p-5 min-w-0">
+        <div className="flex items-center gap-2 mb-3.5">
+          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+            Disciplinas Disponibles:
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2.5" role="tablist" aria-label="Disciplinas deportivas">
           {gruposTyped.map(({ disciplina, losas }) => {
             const isSelected = String(disciplina.id_d) === String(grupoActivo?.disciplina.id_d);
@@ -433,19 +479,19 @@ export default function LosasUser() {
                 aria-selected={isSelected}
                 aria-label={`Ver losas de ${disciplina.nombre as string}`}
                 onClick={() => setSelectedDiscId(disciplina.id_d as number)}
-                className={`inline-flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 ${
                   isSelected
-                    ? "bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] text-white shadow-md shadow-[var(--color-primary-500)]/20"
-                    : "bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--color-primary-500)]"
+                    ? "bg-gradient-to-r from-[#1B6EB6] to-[#165b9a] text-white shadow-md shadow-blue-500/25"
+                    : "bg-slate-50 border border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
                 }`}
               >
-                <Icono className={isSelected ? "text-white" : "text-[var(--color-primary-500)]"} aria-hidden="true" />
-                <span className="min-w-0 break-words">{disciplina.nombre as string}</span>
+                <Icono className={`text-sm ${isSelected ? "text-white" : "text-[#1B6EB6]"}`} aria-hidden="true" />
+                <span>{disciplina.nombre as string}</span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
                     isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-[var(--color-primary-50)] text-[var(--color-primary-600)]"
+                      ? "bg-white/25 text-white"
+                      : "bg-blue-100/70 text-[#1B6EB6]"
                   }`}
                 >
                   {losas.length}
@@ -457,32 +503,33 @@ export default function LosasUser() {
       </div>
 
       {gruposTyped.length === 0 && (
-        <div className="card-theme p-6 sm:p-12 text-center text-[var(--text-secondary)]">
-          No hay losas disponibles para reserva en este momento.
+        <div className="card-theme p-12 text-center text-slate-400">
+          <FaFutbol className="text-4xl mx-auto mb-2 text-slate-300" />
+          <p className="font-semibold text-slate-600">No hay losas disponibles para reserva en este momento.</p>
         </div>
       )}
 
       {/* Todas las losas de la disciplina seleccionada */}
       {grupoActivo && (
-        <section aria-labelledby="grupo-activo">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary-500)]/10 text-[var(--color-primary-600)]">
+        <section aria-labelledby="grupo-activo" className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-200 text-base font-bold">
               {(() => {
                 const Icono = iconoDisciplina(grupoActivo.disciplina.nombre as string);
                 return <Icono aria-hidden="true" />;
               })()}
             </span>
-            <div className="min-w-0">
-              <h2 id="grupo-activo" className="text-lg sm:text-xl font-bold text-[var(--text-primary)] break-words">
+            <div>
+              <h2 id="grupo-activo" className="text-lg font-bold text-slate-800 tracking-tight">
                 Losas de {grupoActivo.disciplina.nombre as string}
               </h2>
-              <p className="text-xs font-medium text-[var(--text-muted)]">
-                {grupoActivo.losas.length} {grupoActivo.losas.length === 1 ? "losa disponible" : "losas disponibles"}
+              <p className="text-xs text-slate-500 font-medium">
+                {grupoActivo.losas.length} {grupoActivo.losas.length === 1 ? "campo deportivo disponible" : "campos deportivos disponibles"}
               </p>
             </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             {grupoActivo.losas.map((losa) => (
               <LosaCard key={losa.id_l} losa={losa} onSolicitar={abrirModal} />
             ))}
@@ -494,22 +541,22 @@ export default function LosasUser() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title="Solicitar permiso normal"
+        title="Solicitar Permiso de Uso Hoy"
         size="md"
       >
         <form onSubmit={handleConfirmar} className="space-y-4">
-          <div className="min-w-0 p-3 sm:p-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-color)] space-y-3 text-sm">
-            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
-              <span className="text-[var(--text-secondary)]">Losa deportiva:</span>
-              <span className="font-semibold text-[var(--text-primary)] break-words sm:text-right">{modalLosa?.nombre} ({modalLosa?.numero_l})</span>
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+              <span className="text-slate-500 font-medium">Losa deportiva:</span>
+              <span className="font-bold text-slate-800">{modalLosa?.nombre} ({modalLosa?.numero_l})</span>
             </div>
-            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
-              <span className="text-[var(--text-secondary)]">Disciplina:</span>
-              <span className="font-semibold text-[var(--text-primary)] break-words sm:text-right">{modalLosa?.nombre_disciplina || "—"}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+              <span className="text-slate-500 font-medium">Disciplina:</span>
+              <span className="font-bold text-[#1B6EB6]">{modalLosa?.nombre_disciplina || "Deporte"}</span>
             </div>
-            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4">
-              <span className="text-[var(--text-secondary)]">Fecha:</span>
-              <span className="font-semibold text-[var(--text-primary)] break-words sm:text-right">Hoy ({fechaHoy})</span>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 font-medium">Fecha de Reserva:</span>
+              <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">Hoy ({fechaHoy})</span>
             </div>
           </div>
 
@@ -518,7 +565,6 @@ export default function LosasUser() {
             value={selectedHorario}
             onChange={(e) => setSelectedHorario(e.target.value)}
             placeholder="Selecciona un bloque de hora"
-            className="min-w-0 [&_select]:min-h-11 [&_select]:max-w-full"
             required
             options={horarios
               .filter((h) => h.inicio > new Date().getHours())
@@ -528,13 +574,12 @@ export default function LosasUser() {
               }))}
           />
 
-          <div className="flex flex-col-reverse gap-3 pt-4 border-t border-[var(--border-color)] sm:flex-row sm:justify-end">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <Button
               type="button"
               variant="secondary"
               disabled={loadingReserva}
               onClick={() => setShowModal(false)}
-              className="min-h-11 w-full sm:w-auto"
             >
               Cancelar
             </Button>
@@ -542,9 +587,8 @@ export default function LosasUser() {
               type="submit"
               loading={loadingReserva}
               disabled={!selectedHorario}
-              className="min-h-11 w-full whitespace-normal sm:w-auto"
             >
-              Confirmar reserva
+              Confirmar Reserva
             </Button>
           </div>
         </form>

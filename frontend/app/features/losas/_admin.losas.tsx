@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import { FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa";
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await api.delete(`/losas/${id}`, request);
   }
 
-  return data({ ok: true });
+  return redirect(new URL(request.url).pathname);
 }
 
 export default function AdminLosas() {
@@ -218,22 +218,35 @@ export default function AdminLosas() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary">Gestión de Losas Deportivas</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Administra los campos deportivos, especificaciones y estados de disponibilidad.
-          </p>
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-200 text-xl font-bold">
+            🏟️
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Gestión de Losas Deportivas
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Administra los campos deportivos, especificaciones y estados de disponibilidad
+            </p>
+          </div>
         </div>
-        <Button onClick={openNew}>
-          <FaPlus className="inline mr-1" /> Nueva Losa
-        </Button>
+        <button
+          type="button"
+          onClick={openNew}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-200 hover:scale-[1.02] hover:shadow-lg transition-all"
+        >
+          <FaPlus size={12} aria-hidden="true" />
+          Nueva Losa
+        </button>
       </div>
 
       <div className="card-theme p-6">
         <div className="mb-4 max-w-md">
           <Input
+            aria-label="Buscar losas"
             placeholder="Buscar por nombre, número, disciplina, estado..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -254,18 +267,18 @@ export default function AdminLosas() {
                 onClick={() => openEdit(row)}
                 aria-label={`Editar losa ${row.nombre}`}
                 title="Editar losa"
-                className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                className="p-2 text-amber-700 bg-amber-50 hover:bg-amber-100 ring-1 ring-amber-200/80 rounded-xl transition-all hover:scale-105"
               >
-                <FaEdit size={15} />
+                <FaEdit size={14} />
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(row)}
                 aria-label={`Eliminar losa ${row.nombre}`}
                 title="Eliminar losa"
-                className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 ring-1 ring-rose-200/80 rounded-xl transition-all hover:scale-105"
               >
-                <FaTrash size={15} />
+                <FaTrash size={14} />
               </button>
             </div>
           )}
@@ -353,7 +366,7 @@ export default function AdminLosas() {
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
-              {editing ? "Guardar Cambios" : "Crear Losa"}
+              {editing ? "Guardar" : "Crear"}
             </Button>
           </div>
         </form>

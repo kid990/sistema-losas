@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  return data({ ok: true });
+  return redirect(new URL(request.url).pathname);
 }
 
 export default function AdminUsuarios() {
@@ -159,22 +159,30 @@ export default function AdminUsuarios() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary">Gestión de Usuarios (Padrón UNHEVAL)</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Consulta y gestiona el estado de estudiantes y docentes autorizados para reservar losas.
-          </p>
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-md shadow-indigo-200 text-xl font-bold">
+            👥
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Gestión de Usuarios (Padrón UNHEVAL)
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Consulta y gestiona el estado de estudiantes y docentes autorizados para reservar
+            </p>
+          </div>
         </div>
         <Button onClick={handleLoadAll} loading={loadingSync}>
-          <FaSyncAlt className="inline mr-1" /> Sincronizar Padrón
+          <FaSyncAlt aria-hidden="true" /> Sincronizar Padrón
         </Button>
       </div>
 
       <div className="card-theme p-6">
         <div className="mb-4 max-w-md">
           <Input
+            aria-label="Buscar usuarios"
             placeholder="Buscar por código, nombre, escuela o estado..."
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
@@ -194,7 +202,7 @@ export default function AdminUsuarios() {
               onClick={() => openEditModal(row)}
               aria-label={`Editar estado de ${row.nombre_completo}`}
               title="Cambiar estado de usuario"
-              className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+              className="p-2 text-amber-700 bg-amber-50 hover:bg-amber-100 ring-1 ring-amber-200/80 rounded-xl transition-all hover:scale-105"
             >
               <FaPencilAlt size={14} />
             </button>
@@ -238,7 +246,7 @@ export default function AdminUsuarios() {
               Cancelar
             </Button>
             <Button type="submit" loading={loadingModal}>
-              Guardar Estado
+              Guardar
             </Button>
           </div>
         </form>

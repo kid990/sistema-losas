@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { Link, useLoaderData } from "react-router";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import Swal from "sweetalert2";
 import { FaEye, FaFilePdf, FaSearch, FaHistory } from "react-icons/fa";
 import { requireAuth } from "~/services/auth.server";
-import { api, ApiError, responseHeadersWithCookies } from "~/services/api.server";
+import { api, responseHeadersWithCookies } from "~/services/api.server";
+import { API_BASE_URL } from "~/lib/constants";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
 import { Button, Input, Modal, Badge, Spinner } from "~/shared/components/ui";
 import { formatFecha, formatFechaHora } from "~/shared/utils/format";
@@ -15,65 +16,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (user.tipo !== "usuario") {
     throw new Response("No autorizado", { status: 403 });
   }
-  const permisos = await api.get(`/permisos/usuario/${user.id}`, request);
+  const permisos = await api.get(`/permisos/usuario/${user.id}`, request).catch(() => ({ data: [] }));
   return data(
     { permisos: (permisos as Record<string, unknown>).data || permisos || [] },
     { headers: responseHeadersWithCookies(request) },
   );
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await requireAuth(request);
-  if (user.tipo !== "usuario") {
-    throw new Response("No autorizado", { status: 403 });
-  }
-
-  const fd = await request.formData();
-  const intent = fd.get("intent") as string;
-  const rawId = fd.get("id_p");
-  const idP = typeof rawId === "string" ? Number(rawId) : NaN;
-
-  if ((intent === "detalles" || intent === "documento") && (!Number.isInteger(idP) || idP <= 0)) {
-    return data({ ok: false, error: "ID de permiso inválido" }, { status: 400 });
-  }
-
-  if (intent === "detalles") {
-    try {
-      const res = await api.get(`/permisos/detalles/${idP}`, request);
-      return data(
-        { ok: true, data: (res as Record<string, unknown>).data || [] },
-        { headers: responseHeadersWithCookies(request) },
-      );
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return data(
-          { ok: false, error: err.message },
-          { status: err.status, headers: responseHeadersWithCookies(request) },
-        );
-      }
-      return data({ ok: false, error: "Error al cargar detalles" }, { status: 500 });
-    }
-  }
-
-  if (intent === "documento") {
-    try {
-      const res = await api.get(`/permisos/${idP}/documento`, request);
-      return data(
-        { ok: true, data: res },
-        { headers: responseHeadersWithCookies(request) },
-      );
-    } catch (err) {
-      if (err instanceof ApiError) {
-        return data(
-          { ok: false, error: err.message },
-          { status: err.status, headers: responseHeadersWithCookies(request) },
-        );
-      }
-      return data({ ok: false, error: "No se pudo obtener el documento" }, { status: 500 });
-    }
-  }
-
-  return data({ ok: false, error: "Acción no válida" }, { status: 400 });
 }
 
 export default function UserPermiso() {
@@ -105,14 +52,11 @@ export default function UserPermiso() {
   const verDetalles = async (permiso: Record<string, unknown>) => {
     setDetallesModal({ open: true, permiso, detalles: [], loading: true });
     try {
-      const fd = new FormData();
-      fd.append("intent", "detalles");
-      fd.append("id_p", String(permiso.id_p));
-      const res = await fetch("", { method: "post", body: fd });
+      const res = await fetch(`${API_BASE_URL}/permisos/detalles/${permiso.id_p}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("No se pudieron obtener los detalles");
       const result = await res.json();
-      if (!res.ok || result.ok === false) {
-        throw new Error(result.error || "Error al cargar detalles");
-      }
       setDetallesModal((s) => ({
         ...s,
         detalles: (result.data as Record<string, unknown>[]) || [],
@@ -129,38 +73,25 @@ export default function UserPermiso() {
   };
 
   const verDocumento = async (idP: number) => {
-    const popup = window.open("about:blank", "_blank");
-    if (!popup) {
-      Swal.fire({
-        icon: "error",
-        title: "Ventana bloqueada",
-        text: "Permite las ventanas emergentes para ver el documento.",
-      });
-      return;
-    }
-    popup.opener = null;
-
     try {
-      const fd = new FormData();
-      fd.append("intent", "documento");
-      fd.append("id_p", String(idP));
-      const res = await fetch("", { method: "post", body: fd });
+      const res = await fetch(`${API_BASE_URL}/permisos/${idP}/documento`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("No se pudo obtener el documento");
       const result = await res.json();
-      if (!res.ok || result.ok === false) {
-        throw new Error(result.error || "No se pudo obtener el documento");
-      }
-      if (result.data?.success && result.data?.url_drive) {
-        popup.location.href = result.data.url_drive;
+      const doc = result.data || result;
+      if (doc?.success && doc?.url_drive) {
+        window.open(doc.url_drive, "_blank");
+      } else if (doc?.url_drive) {
+        window.open(doc.url_drive, "_blank");
       } else {
-        popup.close();
         Swal.fire({
           icon: "info",
           title: "Sin documento",
-          text: result.error || "No se adjuntó archivo a este permiso",
+          text: "Esta solicitud no tiene archivo de justificación adjunto.",
         });
       }
     } catch (err) {
-      popup.close();
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -252,20 +183,33 @@ export default function UserPermiso() {
   ];
 
   return (
-    <div className="min-w-0">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-theme-primary flex items-center gap-2">
-          <FaHistory className="text-[var(--color-primary-500)]" /> Historial de Mis Permisos
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-          Consulta el estado y desglose de tus solicitudes de reserva de losas deportivas.
-        </p>
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-200 text-xl font-bold">
+            <FaHistory />
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Historial de Mis Permisos
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Consulta el estado y desglose de tus solicitudes de reserva de losas deportivas
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/horario"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-200 hover:scale-[1.02] hover:shadow-lg transition-all"
+        >
+          Nueva Reserva
+        </Link>
       </div>
 
-      <div className="card-theme min-w-0 p-3 sm:p-6">
+      <div className="card-theme min-w-0 p-6">
         <div className="mb-4 max-w-md">
           <Input
-            label="Buscar permisos"
+            aria-label="Buscar permisos"
             placeholder="Buscar por ID, tipo o fecha..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -285,9 +229,9 @@ export default function UserPermiso() {
               onClick={() => verDetalles(row)}
               aria-label={`Ver desglose del permiso #${row.id_p}`}
               title="Ver desglose de la reserva"
-              className="min-h-11 min-w-11 p-2 text-[var(--color-primary-600)] bg-[var(--color-primary-50)] hover:bg-[var(--color-primary-100)] rounded-lg transition-colors"
+              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 ring-1 ring-blue-200/80 rounded-xl transition-all hover:scale-105"
             >
-              <FaEye size={15} />
+              <FaEye size={14} />
             </button>
           )}
         />

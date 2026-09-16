@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import Swal from "sweetalert2";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
@@ -21,12 +21,12 @@ function formatFecha(fechaISO: string) {
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
   const [config, dias] = await Promise.all([
-    api.get("/configuracion", request),
-    api.get("/dias-bloqueados", request),
+    api.get("/configuracion",  request).catch(() => null),
+    api.get("/dias-bloqueados", request).catch(() => ({ data: [] })),
   ]);
   return data({
     config: (config as Record<string, unknown>) || null,
-    dias: (dias as Record<string, unknown>).data || dias || [],
+    dias:   (dias as Record<string, unknown>)?.data ?? dias ?? [],
   });
 }
 
@@ -34,31 +34,49 @@ export async function action({ request }: ActionFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
   const fd = await request.formData();
   const intent = fd.get("intent") as string;
+  const pathname = new URL(request.url).pathname;
 
   if (intent === "updateConfig") {
-    const config = {
-      hora_min_solicitud: fd.get("hora_min_solicitud"),
-      hora_max_solicitud: fd.get("hora_max_solicitud"),
-      hora_min_apertura: fd.get("hora_min_apertura"),
-      hora_max_apertura: fd.get("hora_max_apertura"),
-      restriccion_hoy: fd.get("restriccion_hoy"),
-      max_horas_semana: Number(fd.get("max_horas_semana")),
-    };
-    await api.put("/configuracion", request, config);
+    try {
+      await api.put("/configuracion", request, {
+        hora_min_solicitud: fd.get("hora_min_solicitud"),
+        hora_max_solicitud: fd.get("hora_max_solicitud"),
+        hora_min_apertura:  fd.get("hora_min_apertura"),
+        hora_max_apertura:  fd.get("hora_max_apertura"),
+        restriccion_hoy:    fd.get("restriccion_hoy"),
+        max_horas_semana:   Number(fd.get("max_horas_semana")),
+      });
+      return redirect(pathname);
+    } catch (err) {
+      const msg = (err as { message?: string }).message || "Error al guardar configuración";
+      return data({ ok: false, error: msg }, { status: 422 });
+    }
   }
 
   if (intent === "addDia") {
-    await api.post("/dias-bloqueados", request, {
-      fecha: fd.get("fecha"),
-      motivo: fd.get("motivo"),
-    });
+    try {
+      await api.post("/dias-bloqueados", request, {
+        fecha:  fd.get("fecha"),
+        motivo: fd.get("motivo"),
+      });
+      return redirect(pathname);
+    } catch (err) {
+      const msg = (err as { message?: string }).message || "Error al registrar día bloqueado";
+      return data({ ok: false, error: msg }, { status: 422 });
+    }
   }
 
   if (intent === "deleteDia") {
-    await api.delete(`/dias-bloqueados/${fd.get("id")}`, request);
+    try {
+      await api.delete(`/dias-bloqueados/${fd.get("id")}`, request);
+      return redirect(pathname);
+    } catch (err) {
+      const msg = (err as { message?: string }).message || "Error al eliminar el bloqueo";
+      return data({ ok: false, error: msg }, { status: 422 });
+    }
   }
 
-  return data({ ok: true });
+  return redirect(pathname);
 }
 
 export default function AdminConfiguracion() {
@@ -85,6 +103,17 @@ export default function AdminConfiguracion() {
     );
   }, [diasList, searchDias]);
 
+  /* ── Utilidad: parsea respuesta del action ──────────────────── */
+  const parseActionResponse = async (res: Response) => {
+    // El action devolvió redirect() → éxito
+    if (res.redirected) return { ok: true };
+    // El action devolvió data({ error }) → error controlado
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) return res.json();
+    // Cualquier otro caso (HTML de error) → error genérico
+    throw new Error(`Error del servidor (${res.status})`);
+  };
+
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingConfig(true);
@@ -93,7 +122,8 @@ export default function AdminConfiguracion() {
       fd.append("intent", "updateConfig");
       Object.entries(formConfig).forEach(([k, v]) => fd.append(k, String(v)));
       const res = await fetch("", { method: "post", body: fd });
-      if (!res.ok) throw new Error("Error al guardar la configuración");
+      const result = await parseActionResponse(res);
+      if (result.error) throw new Error(result.error);
       Swal.fire({
         icon: "success",
         title: "Configuración actualizada",
@@ -117,36 +147,28 @@ export default function AdminConfiguracion() {
   const handleAddDia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoDia.fecha || !nuevoDia.motivo.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos requeridos",
-        text: "Ingresa la fecha y el motivo del bloqueo.",
-      });
+      Swal.fire({ icon: "warning", title: "Campos requeridos", text: "Ingresa la fecha y el motivo del bloqueo." });
       return;
     }
-
     setLoadingDia(true);
     try {
       const fd = new FormData();
       fd.append("intent", "addDia");
-      fd.append("fecha", nuevoDia.fecha);
+      fd.append("fecha",  nuevoDia.fecha);
       fd.append("motivo", nuevoDia.motivo);
       const res = await fetch("", { method: "post", body: fd });
-      const result = await res.json();
-      if (result.error) {
-        Swal.fire({ icon: "error", title: "Error", text: result.error });
-      } else {
-        Swal.fire({
-          icon: "success",
-          title: "Día bloqueado",
-          text: `El día ${formatFecha(nuevoDia.fecha)} fue bloqueado exitosamente.`,
-          timer: 1800,
-          showConfirmButton: false,
-        });
-        setDiaModal(false);
-        setNuevoDia({ fecha: "", motivo: "" });
-        revalidate();
-      }
+      const result = await parseActionResponse(res);
+      if (result.error) throw new Error(result.error);
+      Swal.fire({
+        icon: "success",
+        title: "Día bloqueado",
+        text: `El día ${formatFecha(nuevoDia.fecha)} fue bloqueado exitosamente.`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+      setDiaModal(false);
+      setNuevoDia({ fecha: "", motivo: "" });
+      revalidate();
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -169,14 +191,14 @@ export default function AdminConfiguracion() {
       confirmButtonText: "Sí, desbloquear",
       cancelButtonText: "Cancelar",
     });
-
     if (!confirm.isConfirmed) return;
-
     try {
       const fd = new FormData();
       fd.append("intent", "deleteDia");
       fd.append("id", String(row.id));
-      await fetch("", { method: "post", body: fd });
+      const res = await fetch("", { method: "post", body: fd });
+      const result = await parseActionResponse(res);
+      if (result.error) throw new Error(result.error);
       revalidate();
       Swal.fire({
         icon: "success",
@@ -195,23 +217,32 @@ export default function AdminConfiguracion() {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme-primary">Configuración del Sistema</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-          Ajusta los horarios de atención, límites de reserva y días no laborables / feriados.
-        </p>
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-orange-200 text-xl font-bold">
+            ⚙️
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Configuración del Sistema
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Ajusta los horarios de atención, límites de reserva y días no laborables / feriados
+            </p>
+          </div>
+        </div>
       </div>
 
       {config && (
-        <div className="card-theme p-6 mb-8">
+        <div className="card-theme p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Parámetros Horarios Globales</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Rango de horario de apertura de losas y políticas de solicitud.</p>
+              <h2 className="text-base font-bold text-slate-800">Parámetros Horarios Globales</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Rango de horario de apertura de losas y políticas de solicitud</p>
             </div>
             <Button onClick={() => { setFormConfig(config); setConfigModal(true); }}>
-              <FaEdit className="inline mr-1" /> Editar Parámetros
+              <FaEdit aria-hidden="true" /> Editar Horarios
             </Button>
           </div>
           <TablaGenerica
@@ -231,16 +262,22 @@ export default function AdminConfiguracion() {
       <div className="card-theme p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Días Bloqueados (Feriados y Mantenimiento)</h2>
-            <p className="text-xs text-[var(--text-secondary)]">Fechas en las que no se permite reservar ninguna losa deportiva.</p>
+            <h2 className="text-base font-bold text-slate-800">Días Bloqueados (Feriados y Mantenimiento)</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Fechas en las que no se permite reservar ninguna losa deportiva</p>
           </div>
-          <Button onClick={() => setDiaModal(true)}>
-            <FaPlus className="inline mr-1" /> Bloquear Nueva Fecha
-          </Button>
+          <button
+            type="button"
+            onClick={() => setDiaModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-red-600 shadow-md shadow-rose-200 hover:scale-[1.02] hover:shadow-lg transition-all"
+          >
+            <FaPlus size={11} aria-hidden="true" />
+            Bloquear Fecha
+          </button>
         </div>
 
         <div className="mb-4 max-w-md">
           <Input
+            aria-label="Buscar fechas o motivos"
             placeholder="Buscar fecha o motivo..."
             value={searchDias}
             onChange={(e) => setSearchDias(e.target.value)}
@@ -250,8 +287,21 @@ export default function AdminConfiguracion() {
 
         <TablaGenerica
           columnas={[
-            { name: "Fecha Bloqueada", selector: (r: Record<string, unknown>) => formatFecha(r.fecha as string), sortable: true },
-            { name: "Motivo / Festividad", selector: (r: Record<string, unknown>) => (r.motivo as string) || "-", sortable: true },
+            {
+              name: "Fecha Bloqueada",
+              cell: (r: Record<string, unknown>) => (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-50 text-rose-700 font-semibold text-xs border border-rose-200/80">
+                  📅 {formatFecha(r.fecha as string)}
+                </span>
+              ),
+              width: "180px",
+              sortable: true,
+            },
+            {
+              name: "Motivo / Festividad",
+              selector: (r: Record<string, unknown>) => (r.motivo as string) || "-",
+              sortable: true,
+            },
           ]}
           datos={filteredDias}
           titulo="Fechas No Disponibles"
@@ -263,9 +313,9 @@ export default function AdminConfiguracion() {
               onClick={() => handleDeleteDia(row)}
               aria-label={`Eliminar bloqueo del ${formatFecha(row.fecha as string)}`}
               title="Desbloquear fecha"
-              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+              className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 ring-1 ring-rose-200/80 rounded-xl transition-all hover:scale-105"
             >
-              <FaTrash size={14} />
+              <FaTrash size={13} />
             </button>
           )}
         />
@@ -340,7 +390,7 @@ export default function AdminConfiguracion() {
               Cancelar
             </Button>
             <Button type="submit" loading={loadingConfig}>
-              Guardar Parámetros
+              Guardar
             </Button>
           </div>
         </form>
@@ -379,7 +429,7 @@ export default function AdminConfiguracion() {
               Cancelar
             </Button>
             <Button type="submit" loading={loadingDia}>
-              Bloquear Fecha
+              Bloquear
             </Button>
           </div>
         </form>

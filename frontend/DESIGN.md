@@ -102,6 +102,21 @@ La paleta se estructura alrededor del azul representativo de la UNHEVAL (#1B6EB6
 - **Body** (Regular 400, 0.875rem/1.25rem, 1.5): Texto narrativo, formulación e instrucciones.
 - **Label** (Medium/Bold 500/700, 0.75rem, 1.1): Badges, etiquetas de estado y subtítulos de tabla.
 
+## Panel administrativo — rediseño TailAdmin
+
+Esta sección prevalece sobre las reglas heredadas para `.admin-shell`. Las superficies públicas, de usuario y de seguridad conservan su identidad.
+
+- Referencia aprobada: TailAdmin React; adaptación propia, sin instalar otra aplicación ni copiar datos de demostración.
+- Modo Operate: administración universitaria en escritorio, con luz de oficina; superficies claras y alto contraste.
+- Sidebar blanco de 260px, navegación agrupada y selección azul suave. Cabecera blanca con perfil y acceso a notificaciones.
+- Inicio: resumen primero, revisión de permisos como acción principal, directorio compacto de módulos y accesos a infraestructura.
+- Fondo #f8fafc, superficies #ffffff, texto #1e293b, secundario #475569, bordes #e2e8f0. Acento institucional #1B6EB6.
+- Inter/system para lectura, títulos de 24–28px, cuerpo de 14px. Radios de 12px en paneles y 8px en controles.
+- Paneles con borde, sin sombras decorativas ni gradientes. Sombras reservadas a menús y diálogos.
+- Tablas con encabezados en caja normal, acciones de 44px, desplazamiento horizontal y estados semánticos.
+- Foco visible, Escape y ciclo de Tab en menú móvil, movimiento reducido. Sin nuevas API ni estadísticas inventadas.
+- Ajuste aprobado: color en resúmenes e iconos (azul, verde, ámbar, violeta #6d28d9 sobre #f5f3ff); estados conservan sus etiquetas. Texto operativo de 14px, auxiliar de 12–13px. Botones de alta con +, nombre accesible y title; formularios con verbos breves.
+
 ## Layout
 
 La distribución se basa en un grid receptivo con contenedor de ancho máximo de `1400px` centrado. 

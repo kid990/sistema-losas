@@ -46,21 +46,27 @@ export default function AdminDetallePermisos() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
-            <FaListAlt className="text-[var(--color-primary-500)]" /> Desglose de Permisos Aprobados
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Vista desagregada por bloque horario y campo asignado de todas las reservas vigentes.
-          </p>
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-md shadow-emerald-200 text-xl font-bold">
+            <FaListAlt />
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Desglose de Permisos Aprobados
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Vista desagregada por bloque horario y campo deportivo asignado
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="card-theme p-6">
         <div className="mb-4 max-w-md">
           <Input
+            aria-label="Buscar reservas"
             placeholder="Buscar por ID, losa, disciplina, fecha u hora..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}

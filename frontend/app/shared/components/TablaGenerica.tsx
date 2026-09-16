@@ -42,83 +42,89 @@ const tableCustomStyles = {
   table: {
     style: {
       backgroundColor: "transparent",
-      borderRadius: "12px",
+      borderRadius: "16px",
       overflow: "hidden",
     },
   },
   rows: {
     style: {
-      backgroundColor: "transparent",
-      color: "var(--text-primary)",
+      backgroundColor: "#ffffff",
+      color: "#1e293b",
       fontSize: "14px",
       fontWeight: "400",
-      borderBottom: "1px solid var(--border-color)",
-      transition: "background-color 0.15s ease",
+      minHeight: "56px",
+      borderBottom: "1px solid #f1f5f9",
+      transition: "all 0.15s ease",
     },
     stripedStyle: {
-      backgroundColor: "rgba(128, 128, 128, 0.04)",
-      borderBottom: "1px solid var(--border-color)",
+      backgroundColor: "#f8fafc",
+      borderBottom: "1px solid #f1f5f9",
     },
     highlightOnHoverStyle: {
-      backgroundColor: "rgba(59, 130, 246, 0.06)",
+      backgroundColor: "#f0f7ff",
       transition: "background-color 0.15s ease",
     },
   },
   headRow: {
     style: {
-      backgroundColor: "rgba(128, 128, 128, 0.06)",
-      borderBottom: "2px solid var(--border-color)",
+      background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+      borderBottom: "2px solid #e2e8f0",
+      minHeight: "48px",
     },
   },
   headCells: {
     style: {
-      color: "var(--text-primary)",
-      fontSize: "13px",
+      color: "#475569",
+      fontSize: "12.5px",
       fontWeight: "700",
       textTransform: "uppercase" as const,
-      letterSpacing: "0.05em",
-      padding: "12px 16px",
+      letterSpacing: "0.06em",
+      padding: "14px 18px",
     },
   },
   cells: {
     style: {
-      color: "var(--text-primary)",
-      padding: "10px 16px",
+      color: "#1e293b",
+      padding: "12px 18px",
     },
   },
   pagination: {
     style: {
-      backgroundColor: "transparent",
-      color: "var(--text-primary)",
-      borderTop: "1px solid var(--border-color)",
+      backgroundColor: "#ffffff",
+      color: "#475569",
+      borderTop: "1px solid #e2e8f0",
       fontSize: "13px",
-      minHeight: "48px",
+      minHeight: "52px",
+      padding: "8px 16px",
     },
     pageButtonsStyle: {
-      color: "var(--text-primary)",
-      fill: "var(--text-secondary)",
-      backgroundColor: "transparent",
+      color: "#1B6EB6",
+      fill: "#1B6EB6",
+      backgroundColor: "#f0f7ff",
       borderRadius: "8px",
+      margin: "0 3px",
+      padding: "6px",
       transition: "all 0.15s ease",
     },
   },
   noData: {
     style: {
-      color: "var(--text-secondary)",
+      color: "#64748b",
       fontSize: "14px",
-      padding: "24px 16px",
+      padding: "36px 16px",
+      backgroundColor: "#ffffff",
     },
   },
   progress: {
     style: {
       backgroundColor: "transparent",
-      color: "var(--text-primary)",
+      color: "#1B6EB6",
     },
   },
   expanderRow: {
     style: {
-      backgroundColor: "transparent",
-      color: "var(--text-primary)",
+      backgroundColor: "#f8fafc",
+      color: "#1e293b",
     },
   },
 };
@@ -150,7 +156,7 @@ export function TablaGenerica({
       ? [
           {
             name: "Acciones",
-            cell: (row: Record<string, unknown>) => acciones(row),
+            cell: (row: Record<string, unknown>) => <div className="table-actions">{acciones(row)}</div>,
             ignoreRowClick: true,
             sortable: false,
           } as Record<string, unknown>,
@@ -159,26 +165,26 @@ export function TablaGenerica({
   ];
 
   return (
-    <div className="mt-4">
+    <div className="data-table-container mt-2">
       {titulo && (
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1 h-px bg-[var(--border-color)]" />
-          <h4 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider px-3">{titulo}</h4>
-          <div className="flex-1 h-px bg-[var(--border-color)]" />
+        <div className="flex items-center gap-3 mb-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">{titulo}</h4>
+          <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent" />
         </div>
       )}
       {buscador && <div className="mb-4">{buscador}</div>}
       {!isClient ? (
         // SSR: skeleton estático para evitar hydration mismatch de react-data-table-component
-        <div className="animate-pulse">
-          <div className="h-10 bg-gray-100 rounded-t-xl mb-1" />
+        <div className="animate-pulse bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="h-11 bg-slate-100 rounded-xl mb-2" />
           {Array.from({ length: Math.min(datos.length || 3, 5) }).map((_, i) => (
-            <div key={i} className="h-12 bg-[var(--bg-surface)] border-b border-[var(--border-color)]" />
+            <div key={i} className="h-12 bg-slate-50 border-b border-slate-100 rounded-lg mb-1" />
           ))}
-          <div className="h-12 bg-gray-50 rounded-b-xl border border-[var(--border-color)]" />
+          <div className="h-11 bg-slate-100 rounded-xl mt-2" />
         </div>
       ) : (
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-[var(--shadow-sm)] overflow-hidden">
+        <div className="table-surface bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] overflow-hidden">
           <DataTable
             columns={columnasFinales}
             data={datos}

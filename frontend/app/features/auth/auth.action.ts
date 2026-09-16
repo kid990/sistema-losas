@@ -66,5 +66,5 @@ export async function action({ request }: Route.ActionArgs) {
     return redirect("/seguridad/modulo", { headers });
   }
   // Usuarios normales redirigidos al inicio de su panel
-  return redirect("/losas", { headers });
+  return redirect("/inicio", { headers });
 }

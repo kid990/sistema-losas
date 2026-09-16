@@ -133,6 +133,7 @@ export function Button({ variant = "primary", children, className = "", size = "
 
   return (
     <button
+      data-ui-button={variant}
       className={`
         inline-flex items-center justify-center gap-2 rounded-xl font-medium
         transition-all duration-200 active:scale-[0.97]
@@ -331,20 +332,20 @@ interface BadgeProps {
 export function Badge({ variant = "neutral", children, dot }: BadgeProps) {
   const variants = {
     primary: "bg-[var(--color-primary-50)] text-[var(--color-primary-600)]",
-    success: "bg-emerald-50 text-emerald-600",
-    warning: "bg-amber-50 text-amber-600",
-    danger: "bg-red-50 text-red-600",
-    info: "bg-indigo-50 text-indigo-600",
-    neutral: "bg-gray-100 text-gray-600",
+    success: "bg-status-success-soft text-status-success",
+    warning: "bg-status-warning-soft text-status-warning",
+    danger: "bg-status-danger-soft text-status-danger",
+    info: "bg-status-info-soft text-status-info",
+    neutral: "bg-status-neutral-soft text-status-neutral",
   };
 
   const dotColors = {
     primary: "bg-[var(--color-primary-500)]",
-    success: "bg-emerald-500",
-    warning: "bg-amber-500",
-    danger: "bg-red-500",
-    info: "bg-indigo-500",
-    neutral: "bg-gray-500",
+    success: "bg-status-success",
+    warning: "bg-status-warning",
+    danger: "bg-status-danger",
+    info: "bg-status-info",
+    neutral: "bg-status-neutral",
   };
 
   return (

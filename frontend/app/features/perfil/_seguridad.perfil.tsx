@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import Swal from "sweetalert2";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";

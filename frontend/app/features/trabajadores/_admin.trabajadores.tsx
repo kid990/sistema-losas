@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await api.delete(`/trabajadores/${fd.get("id_t")}`, request);
   }
 
-  return data({ ok: true });
+  return redirect(new URL(request.url).pathname);
 }
 
 export default function AdminTrabajadores() {
@@ -187,22 +187,35 @@ export default function AdminTrabajadores() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary">Gestión de Personal y Trabajadores</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Administra administradores y personal de seguridad con acceso al sistema.
-          </p>
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-200 text-xl font-bold">
+            💼
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Gestión de Personal y Trabajadores
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Administra personal administrativo y de seguridad con acceso al sistema
+            </p>
+          </div>
         </div>
-        <Button onClick={() => setModal({ open: true, data: null, mode: "create" })}>
-          <FaPlus className="inline mr-1" /> Nuevo Trabajador
-        </Button>
+        <button
+          type="button"
+          onClick={() => setModal({ open: true, data: null, mode: "create" })}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-md shadow-emerald-200 hover:scale-[1.02] hover:shadow-lg transition-all"
+        >
+          <FaPlus size={12} aria-hidden="true" />
+          Nuevo Trabajador
+        </button>
       </div>
 
       <div className="card-theme p-6">
         <div className="mb-4 max-w-md">
           <Input
+            aria-label="Buscar trabajadores"
             placeholder="Buscar por DNI, nombres, apellidos, correo o rol..."
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
@@ -223,7 +236,7 @@ export default function AdminTrabajadores() {
                 onClick={() => setModal({ open: true, data: row, mode: "edit" })}
                 aria-label={`Editar datos de ${row.nombres}`}
                 title="Editar trabajador"
-                className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                className="p-2 text-amber-700 bg-amber-50 hover:bg-amber-100 ring-1 ring-amber-200/80 rounded-xl transition-all hover:scale-105"
               >
                 <FaPencilAlt size={14} />
               </button>
@@ -232,7 +245,7 @@ export default function AdminTrabajadores() {
                 onClick={() => handleDelete(row)}
                 aria-label={`Eliminar trabajador ${row.nombres}`}
                 title="Eliminar trabajador"
-                className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 ring-1 ring-rose-200/80 rounded-xl transition-all hover:scale-105"
               >
                 <FaTrash size={14} />
               </button>
@@ -325,7 +338,7 @@ export default function AdminTrabajadores() {
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
-              {modal.mode === "create" ? "Registrar Trabajador" : "Guardar Cambios"}
+              {modal.mode === "create" ? "Registrar" : "Guardar"}
             </Button>
           </div>
         </form>

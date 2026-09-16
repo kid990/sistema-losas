@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ) {
       throw redirect("/seguridad/modulo");
     }
-    throw redirect("/losas");
+    throw redirect("/inicio");
   }
   return null;
 }

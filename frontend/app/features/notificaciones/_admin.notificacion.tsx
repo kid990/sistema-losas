@@ -8,10 +8,10 @@ import { Input, Badge } from "~/shared/components/ui";
 import { FaBell, FaCheckCircle, FaTimesCircle, FaClock, FaEnvelope, FaExclamationTriangle, FaSearch } from "react-icons/fa";
 
 const typeConfig: Record<string, { icon: typeof FaBell; color: string; bg: string }> = {
-  Aceptado: { icon: FaCheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
-  Rechazado: { icon: FaTimesCircle, color: "text-red-600", bg: "bg-red-50" },
-  Pendiente: { icon: FaClock, color: "text-amber-600", bg: "bg-amber-50" },
-  Cancelado: { icon: FaExclamationTriangle, color: "text-gray-600", bg: "bg-gray-100" },
+  Aceptado: { icon: FaCheckCircle, color: "text-status-success", bg: "bg-status-success-soft" },
+  Rechazado: { icon: FaTimesCircle, color: "text-status-danger", bg: "bg-status-danger-soft" },
+  Pendiente: { icon: FaClock, color: "text-status-warning", bg: "bg-status-warning-soft" },
+  Cancelado: { icon: FaExclamationTriangle, color: "text-status-neutral", bg: "bg-status-neutral-soft" },
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -59,23 +59,29 @@ export default function AdminNotificaciones() {
   }, [notificaciones, filtro, busqueda]);
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
-            <FaBell className="text-[var(--color-primary-500)]" /> Bandeja de Notificaciones
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Registro de avisos automáticos y comunicaciones enviadas a los usuarios del sistema.
-          </p>
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-fuchsia-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-pink-200 text-xl font-bold">
+            <FaBell />
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Bandeja de Notificaciones
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Registro de avisos automáticos y comunicaciones enviadas a los usuarios del sistema
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="card-theme p-4 mb-6">
+      <div className="card-theme p-5">
         <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
           <div className="flex-1 max-w-md">
             <Input
+              aria-label="Buscar notificaciones"
               placeholder="Buscar por mensaje o ID de permiso..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -83,7 +89,7 @@ export default function AdminNotificaciones() {
             />
           </div>
 
-          <div role="tablist" aria-label="Filtros de notificación" className="flex gap-2 flex-wrap">
+          <div role="group" aria-label="Filtros de notificación" className="flex gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
             {[
               { value: "todas", label: "Todas" },
               { value: "aceptado", label: "Aprobados" },
@@ -93,13 +99,13 @@ export default function AdminNotificaciones() {
             ].map((tipo) => (
               <button
                 key={tipo.value}
-                role="tab"
-                aria-selected={filtro === tipo.value}
+                type="button"
+                aria-pressed={filtro === tipo.value}
                 onClick={() => setFiltro(tipo.value)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   filtro === tipo.value
-                    ? "bg-[var(--color-primary-500)] text-white shadow-sm"
-                    : "bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]"
+                    ? "bg-white text-fuchsia-600 shadow-sm font-bold"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {tipo.label}

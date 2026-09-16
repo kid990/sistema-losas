@@ -1,109 +1,155 @@
+import { useState, useRef, useEffect } from "react";
 import { Form, NavLink } from "react-router";
 import {
+  FaHome,
   FaFutbol,
   FaClock,
   FaFileAlt,
   FaUserCircle,
   FaSignOutAlt,
-  FaTimes,
+  FaChevronUp,
+  FaBars,
+  FaThLarge,
 } from "react-icons/fa";
 
 interface SidebarUserProps {
   nombre?: string;
   onClose?: () => void;
+  onToggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+  toggleRef?: React.Ref<HTMLButtonElement>;
 }
 
 const navItems = [
-  { to: "/losas", icon: FaFutbol, label: "Losas" },
-  { to: "/horario", icon: FaClock, label: "Horarios" },
-  { to: "/permiso", icon: FaFileAlt, label: "Mis permisos" },
+  { to: "/inicio", icon: FaHome, label: "Inicio" },
+  { to: "/losas", icon: FaFutbol, label: "Losas Deportivas" },
+  { to: "/horario", icon: FaClock, label: "Horarios de Atención" },
+  { to: "/permiso", icon: FaFileAlt, label: "Mis Permisos" },
 ];
 
-export function SidebarUser({ nombre = "Usuario", onClose }: SidebarUserProps) {
+export function SidebarUser({
+  nombre = "Estudiante / Docente",
+  onClose,
+  onToggleSidebar,
+  sidebarOpen,
+  toggleRef,
+}: SidebarUserProps) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleOutside = (e: PointerEvent) => {
+      if (!profileMenuRef.current?.contains(e.target as Node) && !profileRef.current?.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handleOutside);
+    return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [profileOpen]);
+
+  const inicial = (nombre || "U").charAt(0).toUpperCase();
+
   return (
-    <nav className="sidebar h-full flex flex-col text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-4 py-5 border-b border-white/[0.07]">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <img
-            src="/images/logo.png"
-            alt="Logo UNHEVAL"
-            className="w-9 h-9 shrink-0 rounded-full bg-white p-0.5 object-contain"
-          />
-          <div className="min-w-0">
-            <p className="text-white text-sm font-bold truncate">UNHEVAL</p>
-            <p className="text-gray-400 text-[10px] truncate">Losas deportivas</p>
-          </div>
-        </div>
+    <nav className="admin-sidebar" aria-label="Menú del estudiante">
+      {/* ── Header compacto de 56px ── */}
+      <div className="admin-brand-compact">
+        <NavLink to="/losas" className="admin-brand-logo" onClick={onClose} aria-label="Ir a losas">
+          <span className="admin-brand-mark" aria-hidden="true">
+            <FaThLarge size={15} />
+          </span>
+          <span className="admin-brand-text">
+            <strong>SIRLOD<span className="text-[var(--color-primary-500)]">.</span></strong>
+            <span className="block text-[10px] text-slate-400 font-medium tracking-tight -mt-0.5">Portal Alumnos</span>
+          </span>
+        </NavLink>
+        {/* Botón toggle sidebar */}
         <button
+          ref={toggleRef}
           type="button"
-          onClick={onClose}
-          aria-label="Cerrar menú"
-          className="lg:hidden flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
+          aria-expanded={sidebarOpen}
+          aria-controls="user-sidebar"
+          aria-label={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
+          onClick={onToggleSidebar}
+          className="sidebar-toggle-btn"
+          title={sidebarOpen ? "Colapsar menú" : "Expandir menú"}
         >
-          <FaTimes aria-hidden="true" />
+          <FaBars size={15} />
         </button>
       </div>
 
-      {/* Profile */}
-      <div className="text-center py-5 px-4 border-b border-white/[0.07]">
-        <div className="w-14 h-14 mx-auto mb-2.5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-blue-500/20 ring-2 ring-white/10">
-          {nombre.charAt(0).toUpperCase()}
-        </div>
-        <h5 className="text-white text-sm font-semibold truncate px-2">{nombre}</h5>
-        <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-500/15 text-blue-300 text-[10px] font-medium rounded-full">
-          Usuario
-        </span>
+      {/* ── Grupos de navegación scrollables ── */}
+      <div className="admin-nav-groups">
+        <section aria-label="Servicios Estudiantiles">
+          <p className="admin-nav-heading">Servicios</p>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ${
+                  isActive
+                    ? "bg-blue-50 text-[#1B6EB6] font-bold shadow-xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#1B6EB6] before:rounded-r-full"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`
+              }
+            >
+              <item.icon size={15} className="shrink-0" />
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </section>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `sidebar-nav-item flex items-center gap-3 px-4 py-2.5 text-sm rounded-xl transition-all duration-200 ${
-                isActive
-                  ? "sidebar-nav-item active bg-blue-600/20 text-white font-medium"
-                  : "text-gray-400/90 hover:text-white hover:bg-white/[0.06]"
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon className={`text-sm transition-all duration-200 ${isActive ? "scale-110 text-blue-400" : "opacity-70"}`} />
-                <span>{item.label}</span>
-                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </div>
+      {/* ── Footer: Perfil con submenú pop-up ── */}
+      <div className="admin-sidebar-footer">
+        {profileOpen && (
+          <div ref={profileMenuRef} className="admin-sidebar-profile-menu" role="menu" aria-label="Opciones de perfil">
+            <NavLink
+              to="/perfil"
+              role="menuitem"
+              onClick={() => { setProfileOpen(false); onClose?.(); }}
+              className="admin-sidebar-profile-item"
+            >
+              <FaUserCircle size={14} className="text-[var(--text-muted)]" />
+              <span>Mi perfil</span>
+            </NavLink>
+            <div className="admin-sidebar-footer-divider" />
+            <Form method="post" action="/logout">
+              <button
+                type="submit"
+                role="menuitem"
+                className="admin-sidebar-profile-item admin-sidebar-profile-item--danger w-full"
+              >
+                <FaSignOutAlt size={14} />
+                <span>Cerrar sesión</span>
+              </button>
+            </Form>
+          </div>
+        )}
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-white/[0.07] space-y-0.5">
-        <NavLink
-          to="/perfil"
-          onClick={onClose}
-          className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-xl text-gray-400/90 hover:text-white hover:bg-white/[0.06] transition-all duration-200"
+        <button
+          ref={profileRef}
+          type="button"
+          onClick={() => setProfileOpen((prev) => !prev)}
+          className="admin-sidebar-profile-btn"
+          aria-expanded={profileOpen}
+          aria-haspopup="menu"
+          aria-label="Menú de usuario"
         >
-          <FaUserCircle className="text-sm opacity-70" aria-hidden="true" />
-          Mi perfil
-        </NavLink>
-        <Form method="post" action="/logout">
-          <button
-            type="submit"
-            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
-          >
-            <FaSignOutAlt className="text-sm" aria-hidden="true" />
-            Cerrar sesión
-          </button>
-        </Form>
-        <p className="text-[10px] text-gray-500 text-center pt-3">
-          UNHEVAL © {new Date().getFullYear()}
-        </p>
+          <span className="admin-avatar-sm" aria-hidden="true">{inicial}</span>
+          <div className="admin-sidebar-profile-info">
+            <span className="admin-sidebar-profile-name">{nombre}</span>
+            <span className="admin-sidebar-profile-role">Alumno / Usuario</span>
+          </div>
+          <FaChevronUp
+            size={11}
+            aria-hidden="true"
+            className={`admin-sidebar-profile-chevron ${profileOpen ? "rotate-0" : "rotate-180"}`}
+          />
+        </button>
       </div>
     </nav>
   );

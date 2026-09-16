@@ -238,7 +238,7 @@ export default function AdminPermisos() {
             title="Ver Documento PDF"
             className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
           >
-            <FaFilePdf size={14} /> PDF
+            <FaFilePdf aria-hidden="true" size={18} />
           </button>
         ) : (
           <span className="text-[var(--text-muted)] text-xs font-mono">Regular</span>
@@ -257,37 +257,51 @@ export default function AdminPermisos() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-theme-primary">Gestión de Solicitudes y Permisos</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Evalúa, autoriza o rechaza solicitudes de uso regular y especial de las losas deportivas.
-          </p>
+    <div className="space-y-6 max-w-6xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white flex items-center justify-center shadow-md shadow-orange-200 text-xl font-bold">
+            📋
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Gestión de Solicitudes y Permisos
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Evalúa, autoriza o rechaza solicitudes de uso de las losas deportivas
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="card-theme p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-5">
-          <div className="flex items-center gap-3">
-            <FaFilter className="text-[var(--text-muted)] shrink-0" />
-            <div className="w-52">
-              <Select
-                value={estadoActual}
-                onChange={(e) => navigate(`/dashboard/permisos?estado=${e.target.value}`)}
-                className="mb-0"
-                options={[
-                  { value: "Pendiente", label: "Pendientes de revisión" },
-                  { value: "Aceptado", label: "Aprobados / Autorizados" },
-                  { value: "Rechazado", label: "Rechazados" },
-                  { value: "Cancelado", label: "Cancelados" },
-                ]}
-              />
-            </div>
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
+          {/* Pills de estado vivos */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+            {[
+              { id: "Pendiente", label: "Pendientes", color: "text-amber-700", activeBg: "bg-white text-amber-600 shadow-sm font-bold" },
+              { id: "Aceptado", label: "Aprobados", color: "text-emerald-700", activeBg: "bg-white text-emerald-600 shadow-sm font-bold" },
+              { id: "Rechazado", label: "Rechazados", color: "text-rose-700", activeBg: "bg-white text-rose-600 shadow-sm font-bold" },
+              { id: "Cancelado", label: "Cancelados", color: "text-slate-600", activeBg: "bg-white text-slate-700 shadow-sm font-bold" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => navigate(`/dashboard/permisos?estado=${tab.id}`)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap ${
+                  estadoActual === tab.id
+                    ? tab.activeBg
+                    : "text-slate-600 hover:text-slate-900 font-medium"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           <div className="max-w-xs w-full">
             <Input
+              aria-label="Buscar permisos"
               placeholder="Buscar por ID, usuario o tipo..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -299,17 +313,17 @@ export default function AdminPermisos() {
         <TablaGenerica
           columnas={columnas}
           datos={filtrados}
-          titulo={`Permisos (${estadoActual})`}
+          titulo={`Listado de Solicitudes (${estadoActual})`}
           mensajeVacio={`No hay solicitudes con estado "${estadoActual}"`}
-          submensajeVacio={busqueda ? "Prueba cambiando los términos de búsqueda" : "Selecciona otro estado en el selector superior."}
+          submensajeVacio={busqueda ? "Prueba cambiando los términos de búsqueda" : "Selecciona otro estado para ver más solicitudes."}
           acciones={(row: Record<string, unknown>) => (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => verDetalles(row)}
                 aria-label={`Ver detalles del permiso #${row.id_p}`}
                 title="Ver desglose de reserva"
-                className="p-2 text-[var(--color-primary-600)] bg-[var(--color-primary-50)] hover:bg-[var(--color-primary-100)] rounded-lg transition-colors"
+                className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 ring-1 ring-blue-200/80 rounded-xl transition-all hover:scale-105"
               >
                 <FaEye size={14} />
               </button>
@@ -321,7 +335,7 @@ export default function AdminPermisos() {
                     onClick={() => cambiarEstado(row.id_p as number, "Aceptado")}
                     aria-label={`Aprobar permiso #${row.id_p}`}
                     title="Aprobar solicitud"
-                    className="p-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                    className="p-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 ring-1 ring-emerald-200/80 rounded-xl transition-all hover:scale-105"
                   >
                     <FaCheck size={13} />
                   </button>
@@ -330,7 +344,7 @@ export default function AdminPermisos() {
                     onClick={() => cambiarEstado(row.id_p as number, "Rechazado")}
                     aria-label={`Rechazar permiso #${row.id_p}`}
                     title="Rechazar solicitud"
-                    className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                    className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 ring-1 ring-rose-200/80 rounded-xl transition-all hover:scale-105"
                   >
                     <FaTimes size={13} />
                   </button>
@@ -343,9 +357,9 @@ export default function AdminPermisos() {
                   onClick={() => cambiarEstado(row.id_p as number, "Cancelado")}
                   aria-label={`Cancelar permiso #${row.id_p}`}
                   title="Cancelar autorización"
-                  className="px-2.5 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 ring-1 ring-slate-200 rounded-xl transition-all"
                 >
-                  Cancelar
+                  <FaTimes aria-hidden="true" size={13} />
                 </button>
               )}
 
@@ -355,7 +369,7 @@ export default function AdminPermisos() {
                   onClick={() => cambiarEstado(row.id_p as number, "Pendiente")}
                   aria-label={`Reactivar permiso #${row.id_p}`}
                   title="Volver a poner pendiente"
-                  className="p-2 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                  className="p-2 text-amber-700 bg-amber-50 hover:bg-amber-100 ring-1 ring-amber-200/80 rounded-xl transition-all hover:scale-105"
                 >
                   <FaUndo size={12} />
                 </button>
