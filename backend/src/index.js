@@ -19,6 +19,7 @@ const losaRoutes = require("./modules/losas/losa.routes");
 const imagenesRoutes = require("./modules/imagenes/imagenes.routes");
 const reniecRoutes = require("./modules/reniec/reniec.routes");
 const notificacionRoutes = require("./modules/notificaciones/notificacion.routes");
+const chatbotRoutes = require("./modules/chatbot/chatbot.routes");
 
 const app = express();
 
@@ -106,6 +107,7 @@ app.use("/api/configuracion", configuracionRoutes);
 app.use("/api/dias-bloqueados", diasRoutes);
 app.use("/api/reniec", reniecRoutes);
 app.use("/api/notificaciones", notificacionRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // =========================================
 // Manejador de errores (debe ir al final)

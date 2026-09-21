@@ -45,6 +45,9 @@ const env = {
 
   RENIEC_API_TOKEN: process.env.RENIEC_API_TOKEN || "",
   RENIEC_API_URL: process.env.RENIEC_API_URL || "",
+
+  // Gemini AI - LosaBot (RF-IA-01)
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
 };
 
 const isProd = env.NODE_ENV === "production";
