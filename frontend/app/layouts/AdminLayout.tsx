@@ -5,6 +5,7 @@ import { requireRole } from "~/services/auth.server";
 import { Sidebar } from "~/shared/components/Sidebar";
 
 import { Breadcrumb } from "~/shared/components/ui/Breadcrumb";
+import { ChatbotWidget } from "~/shared/components/ChatbotWidget";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireRole(request, "trabajador", "Administrador");
@@ -74,9 +75,6 @@ export default function AdminLayout() {
       <div
         id="admin-sidebar"
         ref={sidebarRef}
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest("a[href]")) closeSidebar();
-        }}
         inert={!sidebarVisible}
         role={!isDesktop && sidebarOpen ? "dialog" : undefined}
         aria-modal={!isDesktop && sidebarOpen ? true : undefined}
@@ -123,6 +121,7 @@ export default function AdminLayout() {
           <Breadcrumb />
           <Outlet />
         </div>
+        <ChatbotWidget />
       </main>
     </div>
   );

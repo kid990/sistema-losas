@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     reniec_api_token: str = ""
     reniec_api_url: str = ""
 
+    # LosaBot: credenciales cargadas únicamente desde el entorno.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.8-flash"
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_origins(cls, value: object) -> object:

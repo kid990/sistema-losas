@@ -18,6 +18,7 @@ from app.core.database import engine
 from app.core.exceptions import AppError
 from app.core.rate_limit import limiter
 from app.modules.auth.router import router as auth_router
+from app.modules.chatbot.router import router as chatbot_router
 from app.modules.configuracion.router import router as configuracion_router
 from app.modules.dias_bloqueados.router import router as dias_router
 from app.modules.disciplinas.router import router as disciplinas_router
@@ -26,6 +27,7 @@ from app.modules.losas.router import router as losas_router
 from app.modules.notificaciones.router import router as notificaciones_router
 from app.modules.permisos.router import router as permisos_router
 from app.modules.reniec.router import router as reniec_router
+from app.modules.reportes.router import router as reportes_router
 from app.modules.trabajadores.router import router as trabajadores_router
 from app.modules.usuarios.router import router as usuarios_router
 
@@ -168,5 +170,7 @@ for router in (
     dias_router,
     reniec_router,
     notificaciones_router,
+    reportes_router,
+    chatbot_router,
 ):
     app.include_router(router, prefix="/api")

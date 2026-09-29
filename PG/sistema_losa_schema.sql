@@ -1,9 +1,9 @@
 -- SISTEMA DE GESTIÓN DE PERMISOS DEPORTIVOS - UNHEVAL
 -- Esquema adaptado a PostgreSQL. Ejecutar en una base vacía.
 -- PASO 1: ejecutar por separado, conectado a postgres y fuera de una transacción:
--- CREATE DATABASE sistema_losa WITH ENCODING 'UTF8' TEMPLATE template0;
--- PASO 2: conectar a sistema_losa y ejecutar este archivo completo.
--- En pgAdmin: seleccionar sistema_losa y abrir Query Tool.
+-- CREATE DATABASE losa WITH ENCODING 'UTF8' TEMPLATE template0;
+-- PASO 2: conectar a losa y ejecutar este archivo completo.
+-- En pgAdmin: seleccionar losa y abrir Query Tool.
 -- Este archivo solo crea estructura; el original no contiene datos.
 --
 -- Diferencias a considerar al migrar datos/aplicación:

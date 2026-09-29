@@ -12,6 +12,8 @@ const ROUTE_LABELS: Record<string, string> = {
   disciplinas: "Disciplinas",
   imagenes: "Galería de Imágenes",
   configuracion: "Configuración",
+  "revision-ia": "Revisión automática",
+  reportes: "Reportes",
   notificacion: "Notificaciones",
   perfil: "Mi Perfil",
   seguridad: "Seguridad",

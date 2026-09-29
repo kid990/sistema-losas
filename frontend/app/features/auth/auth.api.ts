@@ -50,11 +50,6 @@ export async function loginUser(
   password: string,
 ): Promise<LoginResult> {
   try {
-    console.log(
-      "[LOGIN] Enviando solicitud a",
-      `${API_BASE_URL}/auth/login/usuario`,
-    );
-
     const res = await fetchWithTimeout(`${API_BASE_URL}/auth/login/usuario`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,19 +58,14 @@ export async function loginUser(
     });
 
     const data = await res.json().catch(() => ({}));
-    console.log("[LOGIN] Respuesta recibida:", {
-      status: res.status,
-      ok: res.ok,
-    });
     return { ok: res.ok, status: res.status, data, setCookies: getSetCookies(res) };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Error desconocido";
-    console.error("[LOGIN ERROR]", message);
 
     const errorMsg = message.includes("AbortError")
       ? "La solicitud tardó demasiado. Asegúrate de que el backend está ejecutándose en http://localhost:3000."
-      : "No se pudo conectar con el servidor backend. Asegúrate de tener la carpeta backend ejecutándose con 'npm run dev'.";
+      : "No se pudo conectar con FastAPI. Verifica que backend_fastapi esté ejecutándose en el puerto 3000.";
 
     return {
       ok: false,
@@ -91,11 +81,6 @@ export async function loginAdmin(
   password: string,
 ): Promise<LoginResult> {
   try {
-    console.log(
-      "[LOGIN ADMIN] Enviando solicitud a",
-      `${API_BASE_URL}/auth/login/trabajador`,
-    );
-
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/auth/login/trabajador`,
       {
@@ -107,19 +92,14 @@ export async function loginAdmin(
     );
 
     const data = await res.json().catch(() => ({}));
-    console.log("[LOGIN ADMIN] Respuesta recibida:", {
-      status: res.status,
-      ok: res.ok,
-    });
     return { ok: res.ok, status: res.status, data, setCookies: getSetCookies(res) };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Error desconocido";
-    console.error("[LOGIN ADMIN ERROR]", message);
 
     const errorMsg = message.includes("AbortError")
       ? "La solicitud tardó demasiado. Asegúrate de que el backend está ejecutándose en http://localhost:3000."
-      : "No se pudo conectar con el servidor backend. Asegúrate de tener la carpeta backend ejecutándose con 'npm run dev'.";
+      : "No se pudo conectar con FastAPI. Verifica que backend_fastapi esté ejecutándose en el puerto 3000.";
 
     return {
       ok: false,

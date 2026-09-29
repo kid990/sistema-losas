@@ -308,6 +308,84 @@ async def _conflicts(
     return conflicts
 
 
+async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
+    """Evalúa permisos especiales pendientes con reglas deterministas y auditables."""
+    decision_worker = await db.get(Trabajador, worker_id)
+    if decision_worker is None or decision_worker.estado != "Activo":
+        raise AppError("Administrador revisor no encontrado o inactivo", 403)
+    permissions = list(
+        (
+            await db.scalars(
+                select(Permiso)
+                .where(Permiso.tipo == "Especial", Permiso.estado == "Pendiente")
+                .order_by(Permiso.fecha_creacion, Permiso.id_p)
+                .with_for_update()
+            )
+        ).all()
+    )
+    results: list[dict[str, Any]] = []
+    for permission in permissions:
+        reasons: list[str] = []
+        stored_details = list(
+            (await db.scalars(select(DetallePermiso).where(DetallePermiso.id_p == permission.id_p))).all()
+        )
+        details = [
+            DetallePermisoIn(
+                id_l=item.id_l,
+                fecha=item.fecha,
+                hora_inicio=item.hora_inicio,
+                hora_fin=item.hora_fin,
+                duracion=item.duracion,
+            )
+            for item in stored_details
+        ]
+        if permission.id_arch is None:
+            reasons.append("No tiene documento PDF de sustento")
+        if not details:
+            reasons.append("No contiene bloques horarios")
+        if details:
+            try:
+                await _validate_details(db, details, enforce_request_window=False)
+            except AppError as exc:
+                reasons.append(exc.message)
+            conflicts = await _conflicts(db, details, exclude_permission_id=permission.id_p)
+            accepted_conflicts = []
+            for conflict in conflicts:
+                conflict_id = (conflict.get("conflictos") or [{}])[0].get("id_p")
+                if conflict_id:
+                    existing_status = await db.scalar(
+                        select(Permiso.estado).where(Permiso.id_p == int(conflict_id))
+                    )
+                    if existing_status == "Aceptado":
+                        accepted_conflicts.append(conflict)
+                else:
+                    accepted_conflicts.append(conflict)
+            if accepted_conflicts:
+                reasons.append("Uno o más bloques tienen conflicto con una reserva aceptada")
+        new_status = "Rechazado" if reasons else "Aceptado"
+        reason = "; ".join(dict.fromkeys(reasons)) if reasons else "Cumple todas las reglas automáticas"
+        permission.estado = new_status
+        permission.id_t_decision = worker_id
+        permission.fecha_decision = _utc_naive()
+        db.add(
+            Notificacion(
+                mensaje=f"Revisión automática: {new_status}. {reason}",
+                tipo=new_status,
+                id_p=permission.id_p,
+                leido=False,
+            )
+        )
+        await db.flush()
+        results.append({"id_p": permission.id_p, "decision": new_status, "motivo": reason})
+    await db.commit()
+    return {
+        "procesados": len(results),
+        "aceptados": sum(item["decision"] == "Aceptado" for item in results),
+        "rechazados": sum(item["decision"] == "Rechazado" for item in results),
+        "resultados": results,
+    }
+
+
 async def _create_details(db: AsyncSession, permission_id: int, details: list[DetallePermisoIn]) -> None:
     db.add_all([DetallePermiso(id_p=permission_id, **detail.model_dump()) for detail in details])
 

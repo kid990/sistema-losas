@@ -6,6 +6,7 @@ import {
   FaQuestionCircle,
   FaRegTrashAlt,
 } from "react-icons/fa";
+import { API_BASE_URL } from "~/lib/constants";
 
 /* ── Tipos ──────────────────────────────────────────────────────── */
 interface Message {
@@ -21,7 +22,7 @@ interface GeminiHistoryEntry {
 }
 
 /* ── Constantes ─────────────────────────────────────────────────── */
-const API_URL = "http://localhost:3000/api/chatbot";
+const API_URL = `${API_BASE_URL}/chatbot/`;
 const MAX_MESSAGES_PER_SESSION = 40;
 const SESSION_KEY = "losabot_session";
 
@@ -183,6 +184,7 @@ export function ChatbotWidget() {
         const response = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ message: text, history }),
           signal: abortController.signal,
         });

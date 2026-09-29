@@ -69,10 +69,15 @@ async def set_status(db: AsyncSession, codigo: str, estado: str) -> dict[str, st
 
 async def list_all(db: AsyncSession) -> list[dict[str, Any]]:
     users = (await db.scalars(select(User).order_by(User.id_u))).all()
+    if not users:
+        return []
+
     try:
-        external = await list_usuarios()
+        # La API académica es opcional para este listado. No debe bloquear la
+        # navegación administrativa cuando el proxy UNHEVAL está apagado.
+        external = await asyncio.wait_for(list_usuarios(), timeout=1.0)
         by_code = {str(item.get("codigo")): item for item in external}
-    except (httpx.HTTPError, ValueError):
+    except (TimeoutError, httpx.HTTPError, ValueError):
         by_code = {}
     return [
         {

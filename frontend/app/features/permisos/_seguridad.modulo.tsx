@@ -88,13 +88,16 @@ export default function SeguridadModulo() {
 
   const verDocumento = async (idP: number) => {
     try {
-      const fd = new FormData();
-      fd.append("intent", "documento");
-      fd.append("id_p", String(idP));
-      const res = await fetch("", { method: "post", body: fd });
+      const res = await fetch(`${API_BASE_URL}/permisos/${idP}/documento`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("No se pudo obtener el documento");
       const result = await res.json();
-      if (result.data?.success && result.data?.url_drive) {
-        window.open(result.data.url_drive, "_blank");
+      const doc = result.data || result;
+      if (doc?.success && doc?.url_drive) {
+        window.open(doc.url_drive, "_blank");
+      } else if (doc?.url_drive) {
+        window.open(doc.url_drive, "_blank");
       } else {
         Swal.fire({
           icon: "info",
@@ -128,7 +131,7 @@ export default function SeguridadModulo() {
     {
       name: "Autorización",
       cell: (r: Record<string, unknown>) =>
-        r.tipo === "Especial" && r.tiene_documento ? (
+        r.tipo === "Especial" ? (
           <button
             type="button"
             onClick={() => verDocumento(r.id_p as number)}

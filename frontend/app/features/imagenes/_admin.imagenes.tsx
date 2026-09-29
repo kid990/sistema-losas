@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import Swal from "sweetalert2";
 import { FaTrash, FaPlus, FaEye, FaFilter } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
-import { api, ApiError, responseHeadersWithCookies } from "~/services/api.server";
+import { api, responseHeadersWithCookies } from "~/services/api.server";
+import { API_BASE_URL } from "~/lib/constants";
 import { Button, Modal, Select } from "~/shared/components/ui";
 
 function getImageSrc(foto: string) {
@@ -61,46 +62,16 @@ async function compressImage(file: File, maxWidth = 1400, quality = 0.82): Promi
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
   const [imagenes, losas] = await Promise.all([
-    api.get("/imagenes", request),
-    api.get("/losas", request),
+    api.get("/imagenes", request).catch(() => ({ data: [] })),
+    api.get("/losas", request).catch(() => ({ data: [] })),
   ]);
-  return data({
-    imagenes: (imagenes as Record<string, unknown>).data || imagenes || [],
-    losas: (losas as Record<string, unknown>).data || losas || [],
-  });
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  await requireRole(request, "trabajador", "Administrador");
-  const fd = await request.formData();
-  const intent = fd.get("intent") as string;
-
-  try {
-    if (intent === "upload") {
-      const imageFile = fd.get("imagen") as File;
-      const id_l = fd.get("id_l") as string;
-
-      const uploadForm = new FormData();
-      uploadForm.append("imagen", imageFile);
-      uploadForm.append("id_l", id_l);
-      await api.postForm("/imagenes/upload", request, uploadForm);
-    }
-
-    if (intent === "delete") {
-      await api.delete(`/imagenes/${fd.get("id_img")}`, request);
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "No se pudo procesar la imagen";
-    return data(
-      { ok: false, error: message },
-      {
-        status: error instanceof ApiError ? error.status : 500,
-        headers: responseHeadersWithCookies(request),
-      },
-    );
-  }
-
-  return data({ ok: true }, { headers: responseHeadersWithCookies(request) });
+  return data(
+    {
+      imagenes: (imagenes as Record<string, unknown>).data || imagenes || [],
+      losas: (losas as Record<string, unknown>).data || losas || [],
+    },
+    { headers: responseHeadersWithCookies(request) }
+  );
 }
 
 export default function AdminImagenes() {
@@ -153,38 +124,43 @@ export default function AdminImagenes() {
 
     setIsUploading(true);
     Swal.fire({
-      title: "Optimizando y subiendo imagen...",
-      text: "Comprimiendo para máxima velocidad de carga",
+      title: "Subiendo imagen...",
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading(),
     });
 
     try {
-      // Optimización automática en navegador
       const fileToUpload = await compressImage(selectedFile);
 
-      const fd = new FormData();
-      fd.append("intent", "upload");
-      fd.append("imagen", fileToUpload);
-      fd.append("id_l", selectedLosa);
+      const uploadForm = new FormData();
+      uploadForm.append("imagen", fileToUpload);
+      uploadForm.append("id_l", selectedLosa);
 
-      const res = await fetch("", { method: "post", body: fd });
-      const result = await res.json();
+      const res = await fetch(`${API_BASE_URL}/imagenes/upload`, {
+        method: "POST",
+        body: uploadForm,
+        credentials: "include",
+      });
+      const result = await res.json().catch(() => ({}));
       if (!res.ok || result.ok === false || result.error) {
-        Swal.fire({ icon: "error", title: "Error al subir", text: result.error });
+        Swal.fire({
+          icon: "error",
+          title: "Error al subir",
+          text: result.error || result.message || "No se pudo subir la imagen",
+        });
       } else {
         Swal.fire({
           icon: "success",
-          title: "Imagen optimizada y subida",
-          text: "La fotografía ha sido vinculada exitosamente a la losa.",
-          timer: 1800,
+          title: "Imagen subida",
+          text: "La fotografía ha sido vinculada exitosamente.",
+          timer: 1600,
           showConfirmButton: false,
         });
         setModalOpen(false);
         setSelectedFile(null);
         setPreviewUrl("");
         setSelectedLosa("");
-        revalidate();
+        await revalidate();
       }
     } catch {
       Swal.fire({
@@ -212,15 +188,15 @@ export default function AdminImagenes() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const fd = new FormData();
-      fd.append("intent", "delete");
-      fd.append("id_img", String(img.id_img));
-      const res = await fetch("", { method: "post", body: fd });
+      const res = await fetch(`${API_BASE_URL}/imagenes/${img.id_img}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || result.ok === false) {
-        throw new Error(result.error || "No se pudo eliminar la imagen");
+        throw new Error(result.error || result.message || "No se pudo eliminar la imagen");
       }
-      revalidate();
+      await revalidate();
       Swal.fire({
         icon: "success",
         title: "Imagen eliminada",

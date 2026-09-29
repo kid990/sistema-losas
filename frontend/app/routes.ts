@@ -33,6 +33,8 @@ export default [
     route("dashboard/disciplinas", "features/disciplinas/_admin.disciplinas.tsx"),
     route("dashboard/imagenes", "features/imagenes/_admin.imagenes.tsx"),
     route("dashboard/configuracion", "features/configuracion/_admin.configuracion.tsx"),
+    route("dashboard/revision-ia", "features/ia/_admin.revision-ia.tsx"),
+    route("dashboard/reportes", "features/reportes/_admin.reportes.tsx"),
     route("dashboard/notificacion", "features/notificaciones/_admin.notificacion.tsx"),
     route("dashboard/perfil", "features/perfil/_admin.perfil.tsx"),
   ]),

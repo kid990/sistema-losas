@@ -106,6 +106,15 @@ async def list_all(db: DBSession, _admin: Admin, estado: str | None = Query(defa
     return {"success": True, "data": await service.list_permissions(db, estado)}
 
 
+@router.post("/revision-automatica")
+async def automatic_review(db: DBSession, admin: Admin) -> dict[str, Any]:
+    return {
+        "success": True,
+        "message": "Revisión automática completada",
+        "data": await service.automatic_review(db, admin.id),
+    }
+
+
 @router.get("/bloqueados-detalle")
 async def blocked_details(db: DBSession, _user: AuthenticatedUser) -> dict[str, Any]:
     return {"success": True, "data": await service.blocked_details(db)}

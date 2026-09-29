@@ -105,7 +105,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? disciplinasRaw.filter((d) => !d.estado || d.estado === "Activo")
     : [];
 
-  const config = (configData || DEFAULT_CONFIG) as Config;
+  const config = (((configData as Record<string, unknown> | null)?.data ||
+    configData ||
+    DEFAULT_CONFIG) as Config);
 
   const ocupados = (((ocupadosData as Record<string, unknown>)?.data ||
     ocupadosData ||

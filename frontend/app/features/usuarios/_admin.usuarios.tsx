@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
-import { useLoaderData, useRevalidator } from "react-router";
+import { Suspense, useMemo, useState } from "react";
+import { Await, useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { redirect } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
@@ -11,8 +11,10 @@ import Swal from "sweetalert2";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
-  const usuarios = await api.get("/users/", request);
-  return data({ usuarios: (usuarios as Record<string, unknown>).data || usuarios });
+  const usuarios = api.get("/users/", request).then((response) => {
+    return (response as Record<string, unknown>).data || response;
+  });
+  return { usuarios };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -34,33 +36,36 @@ export async function action({ request }: ActionFunctionArgs) {
   return redirect(new URL(request.url).pathname);
 }
 
+type UsuarioRecord = Record<string, unknown>;
+
+function TablaUsuariosLoading() {
+  return (
+    <div className="card-theme p-6" aria-live="polite" aria-busy="true">
+      <div className="mb-5 h-11 max-w-md animate-pulse rounded-xl bg-slate-200" />
+      <div className="space-y-3">
+        <div className="h-10 animate-pulse rounded-xl bg-slate-200" />
+        {[1, 2, 3].map((row) => (
+          <div key={row} className="h-12 animate-pulse rounded-xl bg-slate-100" />
+        ))}
+      </div>
+      <p className="mt-4 text-center text-sm font-medium text-slate-500">Cargando usuarios…</p>
+    </div>
+  );
+}
+
+function TablaUsuariosError() {
+  return (
+    <div className="card-theme p-8 text-center" role="alert">
+      <p className="font-semibold text-red-700">No se pudo cargar la tabla de usuarios.</p>
+      <p className="mt-1 text-sm text-slate-500">Puedes cambiar de menú y volver a intentarlo.</p>
+    </div>
+  );
+}
+
 export default function AdminUsuarios() {
   const { usuarios } = useLoaderData<typeof loader>();
   const { revalidate } = useRevalidator();
-  const [filtro, setFiltro] = useState("");
   const [loadingSync, setLoadingSync] = useState(false);
-  const [loadingModal, setLoadingModal] = useState(false);
-  const [selectedEstado, setSelectedEstado] = useState("Activo");
-  const [editModal, setEditModal] = useState<{ open: boolean; user: Record<string, unknown> | null }>({
-    open: false,
-    user: null,
-  });
-
-  const lista = (usuarios as Record<string, unknown>[]) || [];
-
-  const datosFiltrados = useMemo(() => {
-    if (!filtro.trim()) return lista;
-    const texto = filtro.toLowerCase();
-    return lista.filter((u) => {
-      return (
-        String(u.codigo || "").toLowerCase().includes(texto) ||
-        String(u.nombre_completo || "").toLowerCase().includes(texto) ||
-        String(u.escuela || "").toLowerCase().includes(texto) ||
-        String(u.rol || "").toLowerCase().includes(texto) ||
-        String(u.estado || "").toLowerCase().includes(texto)
-      );
-    });
-  }, [lista, filtro]);
 
   const handleLoadAll = async () => {
     const result = await Swal.fire({
@@ -100,6 +105,62 @@ export default function AdminUsuarios() {
       setLoadingSync(false);
     }
   };
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-md shadow-indigo-200 text-xl font-bold">
+            👥
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-800">
+              Gestión de Usuarios (Padrón UNHEVAL)
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Consulta y gestiona el estado de estudiantes y docentes autorizados para reservar
+            </p>
+          </div>
+        </div>
+        <Button onClick={handleLoadAll} loading={loadingSync}>
+          <FaSyncAlt aria-hidden="true" /> Sincronizar Padrón
+        </Button>
+      </div>
+
+      <Suspense fallback={<TablaUsuariosLoading />}>
+        <Await resolve={usuarios} errorElement={<TablaUsuariosError />}>
+          {(resolved) => <UsuariosLoaded usuarios={(resolved as UsuarioRecord[]) || []} />}
+        </Await>
+      </Suspense>
+    </div>
+  );
+}
+
+function UsuariosLoaded({ usuarios }: { usuarios: UsuarioRecord[] }) {
+  const { revalidate } = useRevalidator();
+  const [filtro, setFiltro] = useState("");
+  const [loadingModal, setLoadingModal] = useState(false);
+  const [selectedEstado, setSelectedEstado] = useState("Activo");
+  const [editModal, setEditModal] = useState<{ open: boolean; user: Record<string, unknown> | null }>({
+    open: false,
+    user: null,
+  });
+
+  const lista = usuarios;
+
+  const datosFiltrados = useMemo(() => {
+    if (!filtro.trim()) return lista;
+    const texto = filtro.toLowerCase();
+    return lista.filter((u) => {
+      return (
+        String(u.codigo || "").toLowerCase().includes(texto) ||
+        String(u.nombre_completo || "").toLowerCase().includes(texto) ||
+        String(u.escuela || "").toLowerCase().includes(texto) ||
+        String(u.rol || "").toLowerCase().includes(texto) ||
+        String(u.estado || "").toLowerCase().includes(texto)
+      );
+    });
+  }, [lista, filtro]);
 
   const openEditModal = (user: Record<string, unknown>) => {
     setSelectedEstado((user.estado as string) || "Activo");
@@ -159,26 +220,7 @@ export default function AdminUsuarios() {
   ];
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3.5">
-          <span className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-md shadow-indigo-200 text-xl font-bold">
-            👥
-          </span>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-800">
-              Gestión de Usuarios (Padrón UNHEVAL)
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Consulta y gestiona el estado de estudiantes y docentes autorizados para reservar
-            </p>
-          </div>
-        </div>
-        <Button onClick={handleLoadAll} loading={loadingSync}>
-          <FaSyncAlt aria-hidden="true" /> Sincronizar Padrón
-        </Button>
-      </div>
-
+    <>
       <div className="card-theme p-6">
         <div className="mb-4 max-w-md">
           <Input
@@ -251,6 +293,6 @@ export default function AdminUsuarios() {
           </div>
         </form>
       </Modal>
-    </div>
+    </>
   );
 }

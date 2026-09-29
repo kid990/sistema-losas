@@ -4,6 +4,7 @@ import {
   FaHome, FaKey, FaShieldAlt, FaUserTie, FaThLarge,
   FaGraduationCap, FaBell, FaBriefcase, FaImages, FaCog,
   FaUser, FaSignOutAlt, FaBars, FaChevronUp,
+  FaRobot, FaChartBar,
 } from "react-icons/fa";
 
 const groups = [
@@ -19,6 +20,8 @@ const groups = [
     { to: "/dashboard/imagenes", icon: FaImages, label: "Galería de imágenes" },
   ] },
   { title: "Administración", items: [
+    { to: "/dashboard/revision-ia", icon: FaRobot, label: "Revisión automática" },
+    { to: "/dashboard/reportes", icon: FaChartBar, label: "Reportes" },
     { to: "/dashboard/usuarios", icon: FaUserTie, label: "Usuarios" },
     { to: "/dashboard/trabajadores", icon: FaBriefcase, label: "Trabajadores" },
     { to: "/dashboard/configuracion", icon: FaCog, label: "Configuración" },
