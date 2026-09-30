@@ -730,16 +730,6 @@ async def update_status(db: AsyncSession, permission_id: int, estado: str, worke
                 "SCHEDULE_CONFLICT",
                 conflicts=conflicts,
             )
-        if estado == "Aceptado" and permission.tipo == "Especial":
-            document_reasons, _ = await _document_policy_reasons(db, permission, details)
-            if document_reasons:
-                raise AppError(
-                    "El permiso especial no cumple la política documental",
-                    422,
-                    "DOCUMENT_POLICY_REJECTED",
-                    details={"motivos": document_reasons},
-                )
-
     permission.estado = estado
     if estado == "Pendiente":
         permission.id_t_decision = None

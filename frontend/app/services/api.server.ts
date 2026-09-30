@@ -65,6 +65,30 @@ function mergeSetCookiesIntoCookieHeader(
   return Array.from(jar.entries()).map(([k, v]) => `${k}=${v}`).join("; ");
 }
 
+function parseErrorBody(data: unknown): { message?: string; code?: string } {
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data) as { message?: string; code?: string };
+    } catch {
+      return { message: data };
+    }
+  }
+  if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+    const bytes = data instanceof ArrayBuffer
+      ? new Uint8Array(data)
+      : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    try {
+      return JSON.parse(new TextDecoder().decode(bytes)) as {
+        message?: string;
+        code?: string;
+      };
+    } catch {
+      return {};
+    }
+  }
+  return (data as { message?: string; code?: string } | null) || {};
+}
+
 /* ── Instancia Axios (servidor) ───────────────────────────────── */
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -107,7 +131,7 @@ async function apiFetch(
 
   /* ── Auto-refresh en 401 ──────────────────────────────────── */
   if (res.status === 401) {
-    const body = (res.data as { message?: string; code?: string }) || {};
+    const body = parseErrorBody(res.data);
 
     if (body.code === "TOKEN_EXPIRED" || body.code === "AUTH_TOKEN_REQUIRED") {
       const refreshed = await refreshTokensOnce(request);
@@ -160,7 +184,7 @@ async function apiFetch(
 
   /* ── Errores HTTP ─────────────────────────────────────────── */
   if (res.status >= 400) {
-    const error = (res.data as { message?: string }) || {};
+    const error = parseErrorBody(res.data);
     throw new ApiError(error.message || res.statusText || "Error del servidor", res.status, res.data);
   }
 
@@ -171,6 +195,12 @@ async function apiFetch(
 export const api = {
   get: (path: string, request: Request) =>
     apiFetch(path, request, { method: "GET" }),
+
+  getBinary: (path: string, request: Request) =>
+    apiFetch(path, request, {
+      method: "GET",
+      responseType: "arraybuffer",
+    }) as Promise<ArrayBuffer>,
 
   post: (path: string, request: Request, body?: unknown) =>
     apiFetch(path, request, {

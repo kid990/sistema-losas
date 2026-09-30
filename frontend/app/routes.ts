@@ -7,6 +7,7 @@ export default [
   route("forgot-password", "features/auth/forgot-password.tsx"),
   route("reset-password", "features/auth/reset-password.tsx"),
   route("api/reservas", "features/permisos/reservas-resource.ts"),
+  route("api/reportes/pdf", "features/reportes/report-pdf-resource.ts"),
 
   // Public home (no auth required)
   index("features/losas/_public._index.tsx"),

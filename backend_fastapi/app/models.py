@@ -4,6 +4,7 @@ from decimal import Decimal
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -198,3 +200,33 @@ class PasswordResetToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     used_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
+
+
+class ReporteGenerado(Base):
+    __tablename__ = "reportes_generados"
+    __table_args__ = (
+        CheckConstraint("periodo IN ('mensual', 'anual')", name="reportes_periodo_valido"),
+        CheckConstraint("anio BETWEEN 2020 AND 2100", name="reportes_anio_valido"),
+        CheckConstraint(
+            "(periodo = 'mensual' AND mes BETWEEN 1 AND 12) OR "
+            "(periodo = 'anual' AND mes = 0)",
+            name="reportes_mes_valido",
+        ),
+        UniqueConstraint("periodo", "anio", "mes", name="reportes_periodo_unico"),
+    )
+
+    id_reporte: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    periodo: Mapped[str] = mapped_column(String(10))
+    anio: Mapped[int] = mapped_column(SmallInteger)
+    mes: Mapped[int] = mapped_column(SmallInteger, default=0)
+    nombre_archivo: Mapped[str] = mapped_column(String(255))
+    s3_key: Mapped[str] = mapped_column(String(500), unique=True)
+    content_type: Mapped[str] = mapped_column(String(100), default="application/pdf")
+    tamanio: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    fuente_ia: Mapped[str] = mapped_column(String(30))
+    generado_por: Mapped[int | None] = mapped_column(
+        ForeignKey("trabajadores.id_t", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())

@@ -43,7 +43,14 @@ async def check_database() -> None:
             raise SystemExit(1)
 
         counts: dict[str, int] = {}
-        for table in ("configuracion_global", "disciplinas", "losas", "users", "trabajadores"):
+        for table in (
+            "configuracion_global",
+            "disciplinas",
+            "losas",
+            "users",
+            "trabajadores",
+            "reportes_generados",
+        ):
             result = await connection.execute(text(f'SELECT COUNT(*) FROM "{table}"'))
             counts[table] = int(result.scalar_one())
 

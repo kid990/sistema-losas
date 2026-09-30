@@ -60,3 +60,15 @@ archivo temporal:
 ```powershell
 .\.venv\Scripts\python.exe scripts\verify_s3.py
 ```
+
+## Reportes PDF almacenados
+
+Antes de usar reportes en una base existente, crea la tabla de metadatos:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\migrate_reports.py
+```
+
+Cada reporte mensual o anual se genera una sola vez, se guarda bajo el prefijo S3 configurado en
+`S3_REPORT_KEY_PREFIX` (por defecto `reportes`) y se registra en `reportes_generados`. Las siguientes
+consultas del mismo periodo descargan el PDF existente desde S3 sin volver a invocar la IA.

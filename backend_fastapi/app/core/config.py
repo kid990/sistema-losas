@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     s3_key_prefix: str = "documentos"
     s3_image_key_prefix: str = "imagenes"
     s3_document_key_prefix: str = "documentos"
+    s3_report_key_prefix: str = "reportes"
     s3_force_path_style: bool = False
     s3_signed_url_expires_seconds: int = Field(default=900, ge=60, le=604800)
 

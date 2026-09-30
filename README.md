@@ -62,6 +62,7 @@ createdb -U postgres losa
 psql -U postgres -d losa -f .\PG\sistema_losa_schema.sql
 psql -U postgres -d losa -f .\PG\migrations\001_integridad_permisos.sql
 psql -U postgres -d losa -f .\PG\migrations\20260929_permissions_audit.sql
+psql -U postgres -d losa -f .\PG\migrations\20260930_reportes_s3.sql
 ```
 
 Alternativa con pgAdmin:
@@ -135,6 +136,8 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 
 GEMINI_API_KEY=TU_CLAVE_GEMINI
 GEMINI_MODEL=gemini-3.8-flash
+
+S3_REPORT_KEY_PREFIX=reportes
 ```
 
 `AI_PROVIDER` selecciona la IA de LosaBot: admite `deepseek` o `gemini`. La revisión de PDFs usa
@@ -146,6 +149,7 @@ Aplica la migración de auditoría y verifica la base:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\migrate_permissions_audit.py
+.\.venv\Scripts\python.exe scripts\migrate_reports.py
 .\.venv\Scripts\python.exe scripts\check_database.py
 ```
 
@@ -274,12 +278,13 @@ El verificador compara las tablas y columnas existentes con los modelos SQLAlche
 Estado verificado localmente el 30 de septiembre de 2026:
 
 ```text
-Esquema completo: 13 tablas de aplicación verificadas
+Esquema completo: 14 tablas de aplicación verificadas
 - configuracion_global: 1 registro
 - disciplinas: 5 registros
 - losas: 5 registros
 - users: 91 registros
 - trabajadores: 1 registro
+- reportes_generados: 1 registro
 ```
 
 Por tanto, la base PostgreSQL activa está completa respecto a los modelos actuales. El script también permite volver a comprobarla después de clonar, migrar o desplegar.
@@ -300,7 +305,8 @@ El respaldo queda fuera del repositorio para que `git add -A` no lo incluya por 
 - Revisión automática de permisos especiales mediante reglas auditables.
 - Análisis del PDF con Gemini: valida estudiante UNHEVAL, actividad permitida, firma y coincidencia
   de fecha y horario antes de aceptar un permiso especial.
-- Reportes mensuales y anuales.
+- Reportes PDF mensuales y anuales con vista previa, descarga, caché en S3 y análisis administrativo generado
+  por DeepSeek a partir de estadísticas agregadas; incluye respaldo local si la IA no responde.
 - LosaBot con DeepSeek o Gemini, seleccionable desde `.env`, y respuestas locales de respaldo.
 - Gestión de losas, disciplinas, imágenes, usuarios y trabajadores.
 - Horarios configurables y días bloqueados.

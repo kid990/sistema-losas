@@ -101,9 +101,6 @@ export default function AutomaticReviewPage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-xs text-slate-500">
-          La misma política se aplica si un administrador intenta aceptar manualmente un permiso especial.
-        </p>
       </section>
 
       {result?.ok && summary && (
