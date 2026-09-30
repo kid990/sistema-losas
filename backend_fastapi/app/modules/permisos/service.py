@@ -619,6 +619,8 @@ async def blocked_details(db: AsyncSession) -> list[dict[str, Any]]:
             DetallePermiso.fecha,
             DetallePermiso.hora_inicio,
             DetallePermiso.hora_fin,
+            Permiso.tipo,
+            Permiso.estado,
         )
         .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
         .where(

@@ -12,13 +12,15 @@ import {
   type ReservationErrorPayload,
 } from "~/lib/reservation-errors";
 import { Button, Modal } from "~/shared/components/ui";
-import { FaCheck, FaTimes, FaCalendarAlt, FaFileUpload } from "react-icons/fa";
+import { FaCheck, FaTimes, FaCalendarAlt, FaClock, FaFileUpload } from "react-icons/fa";
 
 interface Ocupado {
   id_l: number;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
+  tipo: "Normal" | "Especial";
+  estado: "Pendiente" | "Aceptado";
 }
 
 interface Losa {
@@ -223,6 +225,9 @@ export default function HorarioPublic() {
         fechaCivil(o.fecha) === fecha &&
         o.hora_inicio.substring(0, 5) === horaInicio
     );
+    if (ocupado?.tipo === "Especial" && ocupado.estado === "Pendiente") {
+      return "Pendiente";
+    }
     if (ocupado) return "Ocupado";
 
     if (fecha === fechaHoy) {
@@ -454,6 +459,10 @@ export default function HorarioPublic() {
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
             Ocupado
           </span>
+          <span className="flex items-center gap-1.5 text-amber-600">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            Pendiente (permiso especial)
+          </span>
           <span className="flex items-center gap-1.5 text-slate-400">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
             No disponible
@@ -515,6 +524,9 @@ export default function HorarioPublic() {
                     } else if (estado === "Ocupado") {
                       estilo = "bg-rose-50 text-rose-600 border-rose-100 cursor-not-allowed text-[11px]";
                       icono = <FaTimes className="inline mr-1 text-[10px]" />;
+                    } else if (estado === "Pendiente") {
+                      estilo = "bg-amber-50 text-amber-700 border-amber-200 cursor-not-allowed text-[11px]";
+                      icono = <FaClock className="inline mr-1 text-[10px]" />;
                     } else {
                       estilo = "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed text-[11px]";
                     }
