@@ -126,9 +126,19 @@ FRONTEND_URL=http://localhost:5173
 CORS_ORIGINS=["http://localhost:5173"]
 UNHEVAL_API_URL=http://localhost:3001/api
 
+AI_PROVIDER=deepseek
+DOCUMENT_AI_PROVIDER=gemini
+
+DEEPSEEK_API_KEY=TU_CLAVE_DEEPSEEK
+DEEPSEEK_MODEL=deepseek-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
 GEMINI_API_KEY=TU_CLAVE_GEMINI
 GEMINI_MODEL=gemini-3.8-flash
 ```
+
+`AI_PROVIDER` selecciona la IA de LosaBot: admite `deepseek` o `gemini`. La revisión de PDFs usa
+siempre `DOCUMENT_AI_PROVIDER=gemini`, porque necesita analizar visualmente el documento y la firma.
 
 No subas `.env` a Git. El repositorio solo debe contener `.env.example` sin secretos.
 
@@ -291,7 +301,7 @@ El respaldo queda fuera del repositorio para que `git add -A` no lo incluya por 
 - Análisis del PDF con Gemini: valida estudiante UNHEVAL, actividad permitida, firma y coincidencia
   de fecha y horario antes de aceptar un permiso especial.
 - Reportes mensuales y anuales.
-- LosaBot con Gemini y respuestas locales de respaldo.
+- LosaBot con DeepSeek o Gemini, seleccionable desde `.env`, y respuestas locales de respaldo.
 - Gestión de losas, disciplinas, imágenes, usuarios y trabajadores.
 - Horarios configurables y días bloqueados.
 - Notificaciones, almacenamiento S3 y recuperación de contraseña.
@@ -388,7 +398,9 @@ Comprueba `http://localhost:3001/api/test` y que MySQL tenga la base `api_unheva
 
 ### LosaBot responde en modo local
 
-Configura `GEMINI_API_KEY` en `backend_fastapi/.env` y reinicia FastAPI. La respuesta del endpoint `/api/chatbot/` indicará `source: gemini` cuando la integración esté activa.
+Configura la clave correspondiente al valor de `AI_PROVIDER` en `backend_fastapi/.env` y reinicia
+FastAPI. El endpoint `/api/chatbot/` indicará `source: deepseek` o `source: gemini` cuando la
+integración esté activa.
 
 ### FastAPI no conecta con PostgreSQL
 

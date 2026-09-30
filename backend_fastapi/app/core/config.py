@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,8 +62,13 @@ class Settings(BaseSettings):
     reniec_api_url: str = ""
 
     # LosaBot: credenciales cargadas únicamente desde el entorno.
+    ai_provider: Literal["gemini", "deepseek"] = "gemini"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-flash"
+    deepseek_base_url: str = "https://api.deepseek.com"
+    document_ai_provider: Literal["gemini"] = "gemini"
     document_ai_min_confidence: float = Field(default=0.85, ge=0.5, le=1)
 
     @field_validator("cors_origins", mode="before")
