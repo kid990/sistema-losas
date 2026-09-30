@@ -82,6 +82,19 @@ async def delete_file(key: str) -> None:
     await asyncio.to_thread(lambda: _client().delete_object(Bucket=settings.s3_bucket, Key=key))
 
 
+async def download_file(key: str, max_bytes: int = 10 * 1024 * 1024) -> bytes:
+    """Descarga un objeto privado y limita su tamaño antes de enviarlo al analizador."""
+
+    def get_object() -> bytes:
+        response = _client().get_object(Bucket=settings.s3_bucket, Key=key)
+        content = response["Body"].read(max_bytes + 1)
+        if len(content) > max_bytes:
+            raise AppError("El documento almacenado supera el límite permitido", 413)
+        return bytes(content)
+
+    return await asyncio.to_thread(get_object)
+
+
 async def signed_download_url(key: str) -> str:
     """Genera una URL temporal para descargar un documento privado."""
     return await asyncio.to_thread(

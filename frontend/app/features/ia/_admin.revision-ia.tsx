@@ -48,7 +48,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 const rules = [
-  "Documento PDF de sustento presente",
+  "Solicitante activo en el padrón de estudiantes UNHEVAL",
+  "PDF legible con nombre o código del estudiante",
+  "Firma manuscrita o digital visible",
+  "Aniversario de escuela profesional o facultad",
+  "Campeonato o actividad organizada por estudiantes UNHEVAL",
+  "Fecha y horario del documento coinciden con la solicitud",
   "Uno o más bloques horarios válidos",
   "Fecha vigente y no bloqueada",
   "Horario dentro de la apertura configurada",
@@ -96,6 +101,9 @@ export default function AutomaticReviewPage() {
             </div>
           ))}
         </div>
+        <p className="mt-4 text-xs text-slate-500">
+          La misma política se aplica si un administrador intenta aceptar manualmente un permiso especial.
+        </p>
       </section>
 
       {result?.ok && summary && (

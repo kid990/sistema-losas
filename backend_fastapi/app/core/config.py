@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     # LosaBot: credenciales cargadas únicamente desde el entorno.
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    document_ai_min_confidence: float = Field(default=0.85, ge=0.5, le=1)
 
     @field_validator("cors_origins", mode="before")
     @classmethod

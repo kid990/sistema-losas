@@ -11,7 +11,13 @@ from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.serialization import model_dict
 from app.integrations.email import send_email
-from app.integrations.storage import delete_file, signed_download_url, upload_file
+from app.integrations.storage import (
+    delete_file,
+    download_file,
+    object_key,
+    signed_download_url,
+    upload_file,
+)
 from app.integrations.unheval import get_usuario, list_usuarios
 from app.models import (
     Archivo,
@@ -25,6 +31,7 @@ from app.models import (
     Trabajador,
     User,
 )
+from app.modules.permisos.document_review import analyze_document, rejection_reasons
 from app.modules.permisos.schemas import DetallePermisoIn, PermisoIn, PermisoTrabajadorIn
 
 
@@ -308,6 +315,59 @@ async def _conflicts(
     return conflicts
 
 
+async def _document_policy_reasons(
+    db: AsyncSession,
+    permission: Permiso,
+    details: list[DetallePermisoIn],
+) -> tuple[list[str], str | None]:
+    """Valida padrón UNHEVAL y contenido del sustento de un permiso especial."""
+    if permission.id_u is None:
+        return ["El permiso especial no fue solicitado por un estudiante UNHEVAL"], None
+    user = await db.get(User, permission.id_u)
+    if user is None or user.estado != "Activo" or user.rol != "Alumno":
+        return ["El solicitante no es un estudiante UNHEVAL activo"], None
+
+    student = await get_usuario(user.codigo)
+    if student is None or student.get("rol") != "Alumno":
+        return ["No se pudo acreditar al solicitante como estudiante en el padrón UNHEVAL"], None
+    if str(student.get("codigo") or "") != user.codigo:
+        return ["El código del padrón UNHEVAL no coincide con el solicitante"], None
+
+    if permission.id_arch is None:
+        return ["No tiene documento PDF de sustento"], None
+    archive = await db.get(Archivo, permission.id_arch)
+    if archive is None:
+        return ["El documento de sustento no se encuentra almacenado"], None
+    if archive.mimetype != "application/pdf" or not archive.nombre_original.lower().endswith(".pdf"):
+        return ["El sustento almacenado no es un PDF válido"], None
+
+    key = object_key(archive.nombre_unico) or object_key(archive.url)
+    if key is None:
+        return ["No se pudo localizar el documento en el almacenamiento privado"], None
+
+    court_rows = (
+        await db.execute(select(Losa.id_l, Losa.nombre).where(Losa.id_l.in_({item.id_l for item in details})))
+    ).all()
+    court_names = {int(row.id_l): str(row.nombre) for row in court_rows}
+    requested_schedule = "\n".join(
+        f"- {item.fecha.isoformat()} de {item.hora_inicio.strftime('%H:%M')} "
+        f"a {item.hora_fin.strftime('%H:%M')} en {court_names.get(item.id_l, f'Losa {item.id_l}') }"
+        for item in details
+    )
+    try:
+        content = await download_file(key)
+        if not content.startswith(b"%PDF-"):
+            return ["El contenido almacenado no corresponde a un PDF válido"], None
+        assessment = await analyze_document(
+            content,
+            student=student,
+            requested_schedule=requested_schedule,
+        )
+    except (AppError, RuntimeError):
+        return ["No se pudo verificar el contenido del documento con la IA"], None
+    return rejection_reasons(assessment), assessment.summary
+
+
 async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
     """Evalúa permisos especiales pendientes con reglas deterministas y auditables."""
     decision_worker = await db.get(Trabajador, worker_id)
@@ -326,6 +386,7 @@ async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     for permission in permissions:
         reasons: list[str] = []
+        document_summary: str | None = None
         stored_details = list(
             (await db.scalars(select(DetallePermiso).where(DetallePermiso.id_p == permission.id_p))).all()
         )
@@ -339,8 +400,6 @@ async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
             )
             for item in stored_details
         ]
-        if permission.id_arch is None:
-            reasons.append("No tiene documento PDF de sustento")
         if not details:
             reasons.append("No contiene bloques horarios")
         if details:
@@ -362,8 +421,18 @@ async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
                     accepted_conflicts.append(conflict)
             if accepted_conflicts:
                 reasons.append("Uno o más bloques tienen conflicto con una reserva aceptada")
+            document_reasons, document_summary = await _document_policy_reasons(
+                db,
+                permission,
+                details,
+            )
+            reasons.extend(document_reasons)
         new_status = "Rechazado" if reasons else "Aceptado"
-        reason = "; ".join(dict.fromkeys(reasons)) if reasons else "Cumple todas las reglas automáticas"
+        reason = (
+            "; ".join(dict.fromkeys(reasons))
+            if reasons
+            else f"Cumple todas las reglas automáticas. {document_summary or ''}".strip()
+        )
         permission.estado = new_status
         permission.id_t_decision = worker_id
         permission.fecha_decision = _utc_naive()
@@ -659,6 +728,15 @@ async def update_status(db: AsyncSession, permission_id: int, estado: str, worke
                 "SCHEDULE_CONFLICT",
                 conflicts=conflicts,
             )
+        if estado == "Aceptado" and permission.tipo == "Especial":
+            document_reasons, _ = await _document_policy_reasons(db, permission, details)
+            if document_reasons:
+                raise AppError(
+                    "El permiso especial no cumple la política documental",
+                    422,
+                    "DOCUMENT_POLICY_REJECTED",
+                    details={"motivos": document_reasons},
+                )
 
     permission.estado = estado
     if estado == "Pendiente":
