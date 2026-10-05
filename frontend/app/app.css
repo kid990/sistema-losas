@@ -73,8 +73,8 @@
   --color-status-neutral-soft: #f1f5f9;
   --color-admin-violet: #6d28d9;
   --color-admin-violet-soft: #f5f3ff;
-  --font-sans: "Cambria", "Georgia", ui-serif, serif;
-  --font-display: "Cambria", "Georgia", ui-serif, serif;
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
   --color-primary: #1B6EB6;
   --color-primary-dark: #165b8e;
   --color-primary-light: #e8f0fe;
@@ -145,7 +145,7 @@
 body {
   background-color: var(--bg-body);
   color: var(--text-primary);
-  font-family: "Cambria", "Georgia", ui-serif, serif;
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
