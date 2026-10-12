@@ -15,6 +15,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "revision-ia": "Revisión automática",
   reportes: "Reportes",
   notificacion: "Notificaciones",
+  notificaciones: "Notificaciones",
   perfil: "Mi Perfil",
   seguridad: "Seguridad",
   modulo: "Control de Garita",

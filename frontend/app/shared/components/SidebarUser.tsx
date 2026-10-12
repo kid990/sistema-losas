@@ -5,6 +5,7 @@ import {
   FaFutbol,
   FaClock,
   FaFileAlt,
+  FaBell,
   FaUserCircle,
   FaSignOutAlt,
   FaChevronUp,
@@ -14,6 +15,7 @@ import {
 
 interface SidebarUserProps {
   nombre?: string;
+  notificacionesNoLeidas?: number;
   onClose?: () => void;
   onToggleSidebar?: () => void;
   sidebarOpen?: boolean;
@@ -25,10 +27,12 @@ const navItems = [
   { to: "/losas", icon: FaFutbol, label: "Losas Deportivas" },
   { to: "/horario", icon: FaClock, label: "Horarios de Atención" },
   { to: "/permiso", icon: FaFileAlt, label: "Mis Permisos" },
+  { to: "/notificaciones", icon: FaBell, label: "Notificaciones" },
 ];
 
 export function SidebarUser({
   nombre = "Estudiante / Docente",
+  notificacionesNoLeidas = 0,
   onClose,
   onToggleSidebar,
   sidebarOpen,
@@ -98,6 +102,11 @@ export function SidebarUser({
             >
               <item.icon size={15} className="shrink-0" />
               <span>{item.label}</span>
+              {item.to === "/notificaciones" && notificacionesNoLeidas > 0 && (
+                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white shadow-2xs">
+                  {notificacionesNoLeidas > 99 ? "99+" : notificacionesNoLeidas}
+                </span>
+              )}
             </NavLink>
           ))}
         </section>

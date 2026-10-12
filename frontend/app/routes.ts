@@ -19,6 +19,7 @@ export default [
     route("horario", "features/horarios/_public.horario.tsx"),
     route("perfil", "features/perfil/_user.perfil.tsx"),
     route("permiso", "features/permisos/_user.permiso.tsx"),
+    route("notificaciones", "features/notificaciones/_user.notificacion.tsx"),
     route("user/notifs", "features/notificaciones/user-notifs.tsx"),
   ]),
 

@@ -52,6 +52,8 @@ async def chat(
     opening = config.hora_min_apertura.strftime("%H:%M") if config else "07:00"
     closing = config.hora_max_apertura.strftime("%H:%M") if config else "19:00"
     fallback = local_reply(message, opening, closing)
+    if settings.ai_provider == "openai" and not settings.openai_api_key:
+        return fallback, "local"
     if settings.ai_provider == "gemini" and not settings.gemini_api_key:
         return fallback, "local"
     if settings.ai_provider == "deepseek" and not settings.deepseek_api_key:
@@ -64,6 +66,35 @@ async def chat(
         "Los permisos especiales requieren PDF y son evaluados con reglas de disponibilidad. "
         "No inventes estados ni reservas; remite a Mis Permisos cuando corresponda."
     )
+    if settings.ai_provider == "openai":
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        messages.extend(
+            {
+                "role": "assistant" if entry.role == "model" else "user",
+                "content": "\n".join(part.text for part in entry.parts),
+            }
+            for entry in history[-10:]
+        )
+        messages.append({"role": "user", "content": message.strip()})
+        try:
+            async with httpx.AsyncClient(timeout=25.0) as client:
+                response = await client.post(
+                    f"{settings.openai_base_url.rstrip('/')}/chat/completions",
+                    json={
+                        "model": settings.openai_model,
+                        "messages": messages,
+                        "temperature": 0.2,
+                        "max_tokens": 250,
+                    },
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                )
+                response.raise_for_status()
+                body = response.json()
+            reply = str(body["choices"][0]["message"]["content"] or "").strip()
+            return (reply or fallback), ("openai" if reply else "local")
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+            return fallback, "local"
+
     if settings.ai_provider == "deepseek":
         messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
         messages.extend(

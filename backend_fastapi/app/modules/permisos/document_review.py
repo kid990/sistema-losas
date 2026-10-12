@@ -1,9 +1,11 @@
 import base64
+import io
 import json
 from typing import Any, Literal
 
 import httpx
 from pydantic import BaseModel, Field, ValidationError
+from pypdf import PdfReader
 
 from app.core.config import settings
 
@@ -68,10 +70,7 @@ async def analyze_document(
     student: dict[str, Any],
     requested_schedule: str,
 ) -> DocumentAssessment:
-    """Analiza el PDF con Gemini y devuelve exclusivamente datos estructurados."""
-    if not settings.gemini_api_key:
-        raise RuntimeError("GEMINI_API_KEY no está configurada")
-
+    """Analiza el PDF con IA (OpenAI o Gemini) y devuelve exclusivamente datos estructurados."""
     student_name = str(student.get("nombre_completo") or "").strip()
     prompt = f"""
 Analiza este PDF como documento de sustento para un permiso especial de las losas deportivas
@@ -97,6 +96,85 @@ al estudiante solicitante por nombre o código, describa una categoría permitid
 organizan estudiantes, contenga al menos una firma manuscrita o digital visible y que su fecha y
 horario coincidan con la solicitud. Si un dato no es visible, responde false. No supongas datos.
 """.strip()
+
+    if settings.document_ai_provider == "openai":
+        if not settings.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY no está configurada")
+
+        pdf_b64 = base64.b64encode(pdf_content).decode("ascii")
+        model = settings.document_ai_model or settings.openai_model or "gpt-4o-mini"
+
+        extracted_text = ""
+        try:
+            reader = PdfReader(io.BytesIO(pdf_content))
+            pages = [page.extract_text() or "" for page in reader.pages]
+            extracted_text = "\n".join(pages).strip()
+        except Exception:
+            pass
+
+        system_instruction = (
+            "Eres el evaluador documental con IA de SIRLOD UNHEVAL. "
+            "Tu tarea es evaluar PDFs de sustento para permisos especiales y "
+            "responder estrictamente un objeto JSON con los siguientes campos obligatorios:\n"
+            "- readable: boolean (true si el documento es legible)\n"
+            "- mentions_unheval: boolean (true si menciona a la UNHEVAL)\n"
+            "- student_identity_matches: boolean (true si el nombre o código coincide con el solicitante)\n"
+            "- allowed_category: string, exactamente uno de ['aniversario_escuela_profesional', 'aniversario_facultad', 'campeonato_estudiantil', 'actividad_estudiantil_organizada', 'no_permitida']\n"
+            "- activity_organized_by_students: boolean\n"
+            "- has_visible_signature: boolean (true si contiene una firma visible manuscrita o digital)\n"
+            "- schedule_matches: boolean (true si la fecha y horario del documento coinciden con la solicitud)\n"
+            "- confidence: float entre 0.0 y 1.0\n"
+            "- summary: string descriptivo breve de máximo 500 caracteres"
+        )
+
+        user_content: list[dict[str, Any]] = [
+            {
+                "type": "text",
+                "text": f"{prompt}\n\nTexto extraído del documento:\n{extracted_text}" if extracted_text else prompt,
+            },
+            {
+                "type": "file",
+                "file": {
+                    "file_data": f"data:application/pdf;base64,{pdf_b64}",
+                    "filename": "sustento.pdf",
+                },
+            },
+        ]
+
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_content},
+            ],
+            "temperature": 0.0,
+            "response_format": {"type": "json_object"},
+        }
+
+        url = f"{settings.openai_base_url.rstrip('/')}/chat/completions"
+        try:
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                )
+                if response.status_code == 400 and "file" in response.text:
+                    payload["messages"][1]["content"] = user_content[0]["text"]
+                    response = await client.post(
+                        url,
+                        json=payload,
+                        headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                    )
+                response.raise_for_status()
+                body = response.json()
+            text = body["choices"][0]["message"]["content"]
+            return DocumentAssessment.model_validate(json.loads(text))
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
+            raise RuntimeError(f"No se pudo completar el análisis documental con OpenAI: {exc}") from exc
+
+    if not settings.gemini_api_key:
+        raise RuntimeError("GEMINI_API_KEY no está configurada")
     schema = {
         "type": "OBJECT",
         "properties": {

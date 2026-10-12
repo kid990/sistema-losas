@@ -59,3 +59,48 @@ async def test_chatbot_uses_selected_deepseek_provider(monkeypatch) -> None:
     assert source == "deepseek"
     assert captured["url"] == "https://api.deepseek.com/chat/completions"
     assert captured["json"]["model"] == "deepseek-flash"
+
+
+@pytest.mark.asyncio
+async def test_chatbot_uses_selected_openai_provider(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeDatabase:
+        async def get(self, model: object, item_id: int) -> None:
+            return None
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            return {"choices": [{"message": {"content": "Respuesta de ChatGPT OpenAI"}}]}
+
+    class FakeClient:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        async def __aenter__(self) -> "FakeClient":
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        async def post(self, url: str, **kwargs: object) -> FakeResponse:
+            captured["url"] = url
+            captured["json"] = kwargs["json"]
+            captured["headers"] = kwargs.get("headers")
+            return FakeResponse()
+
+    monkeypatch.setattr(settings, "ai_provider", "openai")
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test-key")
+    monkeypatch.setattr(settings, "openai_model", "gpt-4o-mini")
+    monkeypatch.setattr(service.httpx, "AsyncClient", FakeClient)
+
+    reply, source = await service.chat(FakeDatabase(), "¿Cómo reservo?", [])  # type: ignore[arg-type]
+
+    assert reply == "Respuesta de ChatGPT OpenAI"
+    assert source == "openai"
+    assert captured["url"] == "https://api.openai.com/v1/chat/completions"
+    assert captured["json"]["model"] == "gpt-4o-mini"
+    assert captured["headers"] == {"Authorization": "Bearer sk-test-key"}
