@@ -23,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     api.get("/trabajadores",               request).catch(() => []),
     api.get("/losas",                      request).catch(() => []),
     api.get("/permisos?estado=Pendiente",  request).catch(() => ({ data: [] })),
-    api.get("/permisos?estado=Aprobado",   request).catch(() => ({ data: [] })),
+    api.get("/permisos?estado=Aceptado",   request).catch(() => ({ data: [] })),
     api.get("/permisos?estado=Rechazado",  request).catch(() => ({ data: [] })),
     api.get("/notificaciones",             request).catch(() => ({ data: [] })),
   ]);

@@ -75,7 +75,12 @@ export default function ReportsPage() {
   const reportUrl = `/api/reportes/pdf?${reportParams.toString()}`;
   const reportKey = `${periodo}-${anio}-${periodo === "mensual" ? mes : 0}`;
   const periodLabel = periodo === "mensual" ? `${months[mes - 1]} ${anio}` : `Año ${anio}`;
-  const downloadName = report.nombre_archivo || `reporte-permisos-${reportKey}.pdf`;
+  const monthName = months[mes - 1] || `Mes_${mes}`;
+  const dignifiedFallback =
+    periodo === "mensual"
+      ? `SIRLOD_Reporte_Ejecutivo_${monthName}_${anio}.pdf`
+      : `SIRLOD_Reporte_Ejecutivo_Anual_${anio}.pdf`;
+  const downloadName = report.nombre_archivo || dignifiedFallback;
   const selectingPeriod = navigation.state !== "idle";
   const showPdfLoading = selectingPeriod || loadingPdf || action === "regenerating";
 
@@ -108,7 +113,9 @@ export default function ReportsPage() {
 
     async function loadPdf() {
       try {
-        const response = await fetch(reportUrl, {
+        const fetchUrl = `${reportUrl}&_t=${Date.now()}`;
+        const response = await fetch(fetchUrl, {
+          cache: "no-store",
           credentials: "same-origin",
           signal: controller.signal,
         });
@@ -234,13 +241,18 @@ export default function ReportsPage() {
   return (
     <div className="max-w-7xl space-y-6">
       <header className="flex items-center gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-xl text-white shadow-md">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-xl text-white shadow-md">
           <FaFilePdf aria-hidden="true" />
         </span>
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Reportes PDF</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-800">Reportes Ejecutivos e Insights</h1>
+            <span className="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+              DeepSeek AI
+            </span>
+          </div>
           <p className="text-sm text-slate-500">
-            Selecciona un periodo para cargar su documento guardado o generar uno nuevo.
+            Generación automatizada de reportes institucionales y analítica descriptiva-predictiva para la UNHEVAL.
           </p>
         </div>
       </header>
@@ -289,9 +301,16 @@ export default function ReportsPage() {
       <section className="card-theme overflow-hidden" aria-labelledby="pdf-preview-title">
         <div className="flex flex-col gap-3 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 id="pdf-preview-title" className="font-bold text-slate-800">{periodLabel}</h2>
-            <p className="text-sm text-slate-500">
-              {hasReport ? "Reporte almacenado en S3" : "Todavía no existe un reporte para este periodo"}
+            <div className="flex items-center gap-2">
+              <h2 id="pdf-preview-title" className="font-bold text-slate-800">{periodLabel}</h2>
+              {hasReport ? (
+                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                  Documento Oficial en S3
+                </span>
+              ) : null}
+            </div>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              {hasReport ? downloadName : "Todavía no existe un reporte para este periodo"}
             </p>
           </div>
           {hasReport ? (
@@ -300,13 +319,14 @@ export default function ReportsPage() {
                 <a
                   href={pdfUrl}
                   download={downloadName}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                  title={`Descargar ${downloadName}`}
                 >
-                  <FaDownload aria-hidden="true" /> Descargar
+                  <FaDownload aria-hidden="true" /> Descargar PDF Oficial
                 </a>
               ) : null}
               <Button type="button" variant="secondary" loading={action === "regenerating"} onClick={handleRegenerate}>
-                <FaSyncAlt aria-hidden="true" /> Regenerar
+                <FaSyncAlt aria-hidden="true" /> Regenerar con IA
               </Button>
               <Button type="button" variant="danger" loading={action === "deleting"} onClick={handleDelete}>
                 <FaTrash aria-hidden="true" /> Eliminar

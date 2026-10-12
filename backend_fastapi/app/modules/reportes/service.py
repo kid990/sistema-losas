@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.integrations.storage import StoredFile, delete_file, download_file, upload_file
-from app.models import DetallePermiso, Losa, Permiso, ReporteGenerado
+from app.models import DetallePermiso, Disciplina, Losa, Permiso, ReporteGenerado, User
 from app.modules.reportes.ai import generate_report_analysis
 from app.modules.reportes.pdf import build_report_pdf, report_filename
 
@@ -122,23 +122,83 @@ async def summary(
         .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
         .where(*period_filter, Permiso.estado == "Aceptado")
     )
+    total_hours = int(hours or 0)
+
+    courts_rows = (
+        await db.execute(
+            select(
+                Losa.nombre,
+                Losa.ubicacion,
+                Disciplina.nombre,
+                func.count(func.distinct(Permiso.id_p)),
+                func.coalesce(func.sum(DetallePermiso.duracion), 0),
+            )
+            .join(DetallePermiso, DetallePermiso.id_l == Losa.id_l)
+            .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
+            .outerjoin(Disciplina, Disciplina.id_d == Losa.id_d)
+            .where(*period_filter, Permiso.estado == "Aceptado")
+            .group_by(Losa.id_l, Losa.nombre, Losa.ubicacion, Disciplina.nombre)
+            .order_by(func.count(func.distinct(Permiso.id_p)).desc(), Losa.nombre)
+        )
+    ).all()
+
     courts = [
-        {"losa": name, "reservas": int(count), "horas": int(court_hours or 0)}
-        for name, count, court_hours in (
+        {
+            "losa": name,
+            "ubicacion": location or "Campus Universitario",
+            "disciplina": disc or "Multiuso",
+            "reservas": int(count),
+            "horas": int(court_hours or 0),
+            "porcentaje_horas": (
+                round((int(court_hours or 0) / total_hours * 100), 1) if total_hours else 0.0
+            ),
+        }
+        for name, location, disc, count, court_hours in courts_rows
+    ]
+
+    roles = {
+        str(rol): int(count)
+        for rol, count in (
             await db.execute(
-                select(
-                    Losa.nombre,
-                    func.count(func.distinct(Permiso.id_p)),
-                    func.coalesce(func.sum(DetallePermiso.duracion), 0),
-                )
+                select(User.rol, func.count(Permiso.id_p))
+                .join(Permiso, Permiso.id_u == User.id_u)
+                .where(*period_filter, Permiso.estado == "Aceptado")
+                .group_by(User.rol)
+            )
+        ).all()
+    }
+
+    disciplines = {
+        str(disc_nombre): int(count)
+        for disc_nombre, count in (
+            await db.execute(
+                select(Disciplina.nombre, func.count(DetallePermiso.id_d))
+                .join(Losa, Losa.id_d == Disciplina.id_d)
                 .join(DetallePermiso, DetallePermiso.id_l == Losa.id_l)
                 .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
                 .where(*period_filter, Permiso.estado == "Aceptado")
-                .group_by(Losa.id_l, Losa.nombre)
-                .order_by(func.count(func.distinct(Permiso.id_p)).desc(), Losa.nombre)
+                .group_by(Disciplina.nombre)
+                .order_by(func.count(DetallePermiso.id_d).desc())
             )
         ).all()
-    ]
+    }
+
+    time_rows = (
+        await db.execute(
+            select(DetallePermiso.hora_inicio, func.count(DetallePermiso.id_d))
+            .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
+            .where(*period_filter, Permiso.estado == "Aceptado")
+            .group_by(DetallePermiso.hora_inicio)
+            .order_by(func.count(DetallePermiso.id_d).desc())
+        )
+    ).all()
+
+    peak_time_str = (
+        f"{time_rows[0][0].strftime('%H:%M')} hrs (Mayor afluencia)"
+        if time_rows and time_rows[0][0]
+        else "16:00 a 19:00 hrs"
+    )
+
     approval_rate = round((accepted / total * 100), 1) if total else 0.0
     report: dict[str, Any] = {
         "periodo": periodo,
@@ -147,19 +207,25 @@ async def summary(
         "desde": start.date(),
         "hasta": end.date(),
         "total_permisos": total,
-        "horas_reservadas": int(hours or 0),
+        "horas_reservadas": total_hours,
         "tasa_aprobacion": approval_rate,
         "por_estado": statuses,
         "por_tipo": types,
         "por_losa": courts,
+        "por_rol": roles,
+        "por_disciplina": disciplines,
+        "franja_horaria_pico": peak_time_str,
     }
     analysis, source = await generate_report_analysis(report)
     report["analisis"] = analysis.model_dump()
     report["analisis_fuente"] = source
     report["insights"] = [
         analysis.resumen_ejecutivo,
+        *([analysis.evaluacion_demanda] if analysis.evaluacion_demanda else []),
         *analysis.hallazgos,
+        *analysis.alertas_operativas,
         *analysis.recomendaciones,
+        *([analysis.proyeccion_tendencia] if analysis.proyeccion_tendencia else []),
     ]
     return report
 

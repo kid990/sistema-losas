@@ -577,7 +577,8 @@ async def list_permissions(db: AsyncSession, estado: str | None) -> list[dict[st
         .order_by(Permiso.fecha_creacion.desc())
     )
     if estado:
-        stmt = stmt.where(Permiso.estado == estado)
+        normalized_state = "Aceptado" if estado == "Aprobado" else estado
+        stmt = stmt.where(Permiso.estado == normalized_state)
     return [dict(row) for row in (await db.execute(stmt)).mappings().all()]
 
 

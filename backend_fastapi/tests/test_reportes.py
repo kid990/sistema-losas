@@ -55,11 +55,11 @@ def test_report_pdf_is_valid_and_contains_summary() -> None:
     extracted = "\n".join(page.extract_text() or "" for page in reader.pages)
 
     assert content.startswith(b"%PDF-")
-    assert len(reader.pages) == 1
-    assert "Reporte de permisos" in extracted
+    assert len(reader.pages) == 2
+    assert "SIRLOD" in extracted
     assert "Losa Principal" in extracted
     assert "DeepSeek" in extracted
-    assert report_filename(report) == "reporte_mensual_2026_09.pdf"
+    assert report_filename(report) == "SIRLOD_Reporte_Ejecutivo_Septiembre_2026.pdf"
 
 
 @pytest.mark.asyncio

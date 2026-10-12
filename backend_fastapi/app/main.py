@@ -1,3 +1,4 @@
+# SIRLOD - Sistema Inteligente de Reserva de Losas (FastAPI)
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
