@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigation,
 } from "react-router";
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -48,8 +49,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function NavigationProgressBar() {
+  const navigation = useNavigation();
+  const isNavigating = Boolean(navigation.location);
+
+  if (!isNavigating) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-9999 h-1 bg-transparent pointer-events-none overflow-hidden">
+      <div className="h-full bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-400 animate-pulse w-full transition-all duration-300" />
+    </div>
+  );
+}
+
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <NavigationProgressBar />
+      <Outlet />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

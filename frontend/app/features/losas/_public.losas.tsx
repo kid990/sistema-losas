@@ -63,12 +63,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [disciplinasData, losasData, configData] = await Promise.all([
     api.get("/disciplinas/activas", request).catch(() => api.get("/disciplinas/", request)),
-    api.get("/losas", request),
+    api.get("/losas/con-detalles", request).catch(() => api.get("/losas", request)),
     api.get("/configuracion", request),
   ]);
 
   const disciplinasRaw = ((disciplinasData as Record<string, unknown>).data || disciplinasData || []) as Record<string, unknown>[];
-  const losasRaw = ((losasData as Record<string, unknown>).data || losasData || []) as LosaItem[];
+  const losasRaw = ((losasData as Record<string, unknown>).data || losasData || []) as LosaDetallada[];
   const config = configData || null;
 
   // Solo disciplinas activas (si el endpoint no filtra)
@@ -81,42 +81,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (l) => !l.estado || l.estado === "Disponible"
   );
 
-  const agrupado: Record<string, LosaItem[]> = {};
+  const agrupado: Record<string, LosaDetallada[]> = {};
   for (const losa of losasDisponibles) {
     const key = String(losa.id_d);
     if (!agrupado[key]) agrupado[key] = [];
-    agrupado[key].push({
-      id_l: losa.id_l,
-      nombre: losa.nombre,
-      numero_l: losa.numero_l,
-      id_d: losa.id_d,
-      estado: losa.estado || "Disponible",
-      ubicacion: losa.ubicacion,
-    });
+    agrupado[key].push(losa);
   }
 
-  // Filtrar disciplinas sin losas disponibles
-  const disciplinasConLosas = disciplinas.filter(
-    (d) => (agrupado[String(d.id_d)] || []).length > 0
-  );
-
-  // Cargar detalles (imágenes y ficha técnica) de TODAS las losas en paralelo
-  const grupos: GrupoLosas[] = await Promise.all(
-    disciplinasConLosas.map(async (disciplina) => {
-      const losas = await Promise.all(
-        (agrupado[String(disciplina.id_d)] || []).map(async (losa) => {
-          try {
-            const raw = (await api.get(`/losas/losas-detalles/${losa.id_l}`, request)) as Record<string, unknown>;
-            const detalles = (raw.data || raw) as LosaDetallada;
-            return { ...losa, ...detalles };
-          } catch {
-            return losa;
-          }
-        })
-      );
-      return { disciplina, losas };
-    })
-  );
+  // Filtrar disciplinas sin losas disponibles y armar grupos en memoria
+  const grupos: GrupoLosas[] = disciplinas
+    .filter((d) => (agrupado[String(d.id_d)] || []).length > 0)
+    .map((disciplina) => ({
+      disciplina,
+      losas: agrupado[String(disciplina.id_d)] || [],
+    }));
 
   return data(
     {

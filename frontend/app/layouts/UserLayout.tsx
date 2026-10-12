@@ -32,6 +32,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return data({ user, notificacionesNoLeidas }, { headers: responseHeadersWithCookies(request) });
 }
 
+export function shouldRevalidate({ formMethod, defaultShouldRevalidate }: { formMethod?: string; defaultShouldRevalidate: boolean }) {
+  // Solo revalidar el layout si hubo una mutación (POST/PUT/PATCH/DELETE)
+  if (formMethod && formMethod !== "GET") {
+    return true;
+  }
+  // En navegación simple de links (GET), mantener los datos del layout cacheados
+  return false;
+}
+
 export default function UserLayout() {
   const { user, notificacionesNoLeidas } = useLoaderData<typeof loader>();
   const [sidebarOpen, setSidebarOpen] = useState(false);

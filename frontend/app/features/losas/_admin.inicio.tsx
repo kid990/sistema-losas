@@ -15,17 +15,14 @@ type Notif   = Record<string, unknown>;
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
 
-  const [
-    usuariosRes, trabajadoresRes, losasRes,
-    pendientesRes, aprobadosRes, rechazadosRes, notifsRes,
-  ] = await Promise.all([
-    api.get("/users",                      request).catch(() => []),
-    api.get("/trabajadores",               request).catch(() => []),
-    api.get("/losas",                      request).catch(() => []),
-    api.get("/permisos?estado=Pendiente",  request).catch(() => ({ data: [] })),
-    api.get("/permisos?estado=Aceptado",   request).catch(() => ({ data: [] })),
-    api.get("/permisos?estado=Rechazado",  request).catch(() => ({ data: [] })),
-    api.get("/notificaciones",             request).catch(() => ({ data: [] })),
+  // En lugar de hacer 3 llamadas separadas a /permisos (Pendiente, Aceptado, Rechazado),
+  // traemos la lista consolidada de permisos una sola vez y filtramos en memoria.
+  const [usuariosRes, trabajadoresRes, losasRes, permisosRes, notifsRes] = await Promise.all([
+    api.get("/users", request).catch(() => []),
+    api.get("/trabajadores", request).catch(() => []),
+    api.get("/losas", request).catch(() => []),
+    api.get("/permisos", request).catch(() => ({ data: [] })),
+    api.get("/notificaciones", request).catch(() => ({ data: [] })),
   ]);
 
   const count = (r: unknown) => {
@@ -41,14 +38,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return [];
   };
 
+  const todosPermisos = toArr(permisosRes);
+  const pendientesList = todosPermisos.filter((p) => p.estado === "Pendiente");
+  const aprobadosCount = todosPermisos.filter((p) => p.estado === "Aceptado" || p.estado === "Aprobado").length;
+  const rechazadosCount = todosPermisos.filter((p) => p.estado === "Rechazado").length;
+
   return data({
     totalUsuarios:     count(usuariosRes),
     totalTrabajadores: count(trabajadoresRes),
     totalLosas:        count(losasRes),
-    pendientes:        count(pendientesRes),
-    aprobados:         count(aprobadosRes),
-    rechazados:        count(rechazadosRes),
-    ultimosPendientes: toArr(pendientesRes).slice(0, 5),
+    pendientes:        pendientesList.length,
+    aprobados:         aprobadosCount,
+    rechazados:        rechazadosCount,
+    ultimosPendientes: pendientesList.slice(0, 5),
     ultimasNotifs:     (toArr(notifsRes) as Notif[]).slice(0, 6),
   });
 }

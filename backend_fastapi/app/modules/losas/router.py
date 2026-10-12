@@ -14,6 +14,11 @@ async def list_all(db: DBSession) -> list[dict[str, Any]]:
     return await service.list_all(db)
 
 
+@router.get("/con-detalles")
+async def list_all_with_details(db: DBSession) -> list[dict[str, Any]]:
+    return await service.list_all_with_details(db)
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create(payload: LosaIn, db: DBSession) -> dict[str, int]:
     return {"id": await service.create(db, payload)}

@@ -21,6 +21,40 @@ async def list_all(db: AsyncSession) -> list[dict[str, Any]]:
     return [{**model_dict(losa), "nombre_disciplina": disciplina} for losa, disciplina in result.all()]
 
 
+async def list_all_with_details(db: AsyncSession) -> list[dict[str, Any]]:
+    """Carga todas las losas con su disciplina e imágenes firmadas en solo 2 queries."""
+    result = await db.execute(
+        select(Losa, Disciplina.nombre.label("nombre_disciplina"))
+        .join(Disciplina, Losa.id_d == Disciplina.id_d)
+        .order_by(Losa.id_l)
+    )
+    court_rows = result.all()
+    if not court_rows:
+        return []
+
+    court_ids = [losa.id_l for losa, _ in court_rows]
+    image_rows = (await db.scalars(select(Imagen).where(Imagen.id_l.in_(court_ids)))).all()
+
+    # Pre-firmar todas las imágenes en paralelo
+    signed_urls = await asyncio.gather(*(signed_stored_object_url(img.url) for img in image_rows))
+    images_by_court: dict[int, list[dict[str, Any]]] = {cid: [] for cid in court_ids}
+    for img, signed_url in zip(image_rows, signed_urls, strict=True):
+        images_by_court[img.id_l].append({
+            "id_img": img.id_img,
+            "nombre_imagen": img.nombre,
+            "foto": signed_url,
+        })
+
+    return [
+        {
+            **model_dict(losa),
+            "nombre_disciplina": disc,
+            "imagenes": images_by_court.get(losa.id_l, []),
+        }
+        for losa, disc in court_rows
+    ]
+
+
 async def create(db: AsyncSession, payload: LosaIn) -> int:
     data = payload.model_dump()
     data["estado"] = data["estado"] or "Disponible"

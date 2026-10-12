@@ -12,6 +12,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { user };
 }
 
+export function shouldRevalidate({ formMethod }: { formMethod?: string }) {
+  if (formMethod && formMethod !== "GET") {
+    return true;
+  }
+  return false;
+}
+
 export default function AdminLayout() {
   const { user } = useLoaderData<typeof loader>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
