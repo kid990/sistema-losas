@@ -145,9 +145,18 @@
 body {
   background-color: var(--bg-body);
   color: var(--text-primary);
-  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Epunda Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tipografía de títulos con Epunda Slab */
+h1, h2, h3, h4, h5, h6, .font-slab {
+  font-family: "Epunda Slab", ui-serif, Georgia, serif;
+}
+
+.font-sans {
+  font-family: "Epunda Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ========== UTILITY CLASSES FOR THEME ========== */

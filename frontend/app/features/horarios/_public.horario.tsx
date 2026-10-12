@@ -12,7 +12,18 @@ import {
   type ReservationErrorPayload,
 } from "~/lib/reservation-errors";
 import { Button, Modal } from "~/shared/components/ui";
-import { FaCheck, FaTimes, FaCalendarAlt, FaClock, FaFileUpload } from "react-icons/fa";
+import {
+  FaCheck,
+  FaTimes,
+  FaCalendarAlt,
+  FaClock,
+  FaFileUpload,
+  FaCalendarCheck,
+  FaInfoCircle,
+  FaShieldAlt,
+  FaFutbol,
+  FaLayerGroup,
+} from "react-icons/fa";
 
 interface Ocupado {
   id_l: number;
@@ -373,50 +384,81 @@ export default function HorarioPublic() {
   );
 
   return (
-    <div className="space-y-4 max-w-6xl">
-      {/* Encabezado directo */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">
-            Horarios de Atención
+    <div className="space-y-5 max-w-7xl mx-auto pb-10">
+      {/* ─── Encabezado Principal ───────────────────────────────── */}
+      <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-50 text-[#1B6EB6] text-[11px] font-semibold tracking-wide">
+            <FaCalendarCheck size={12} />
+            <span>Sistema Inteligente de Reserva</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight font-slab">
+            Horarios y Disponibilidad
           </h1>
           <p className="text-xs text-slate-500">
-            Selecciona el horario disponible para reservar
+            Explora las losas deportivas en tiempo real y reserva tu turno al instante.
           </p>
         </div>
-      </div>
 
-      {/* Controles simples */}
-      <div className="card-theme p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
-          {/* Tipo de permiso */}
-          <div className="md:col-span-6 flex gap-2">
+        {/* Resumen dinámico de selección para Permiso Especial */}
+        {tipoPermiso === "Especial" && seleccionados.length > 0 && (
+          <div className="flex items-center gap-3 bg-linear-to-r from-blue-500 to-indigo-600 p-2.5 px-4 rounded-xl text-white shadow-md">
+            <div>
+              <p className="text-[11px] text-blue-100 font-medium">Bloques marcados</p>
+              <p className="text-base font-black leading-none">{seleccionados.length} {seleccionados.length === 1 ? "hora" : "horas"}</p>
+            </div>
             <button
               type="button"
-              onClick={() => handleTipoPermisoChange("Normal")}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                tipoPermiso === "Normal"
-                  ? "bg-[#1B6EB6] text-white border-[#1B6EB6]"
-                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-              }`}
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 rounded-lg bg-white text-[#1B6EB6] font-bold text-xs hover:bg-blue-50 transition-all shadow-xs cursor-pointer active:scale-95"
             >
-              Reserva Normal
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTipoPermisoChange("Especial")}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                tipoPermiso === "Especial"
-                  ? "bg-[#1B6EB6] text-white border-[#1B6EB6]"
-                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              Permiso Especial
+              Continuar solicitud →
             </button>
           </div>
+        )}
+      </div>
 
-          {/* Fecha */}
-          <div className="md:col-span-3">
+      {/* ─── Panel de Configuración de Filtros ──────────────────── */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          {/* Selector de Modalidad */}
+          <div className="md:col-span-6">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              Tipo de Reserva
+            </label>
+            <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-xl border border-slate-200/70">
+              <button
+                type="button"
+                onClick={() => handleTipoPermisoChange("Normal")}
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  tipoPermiso === "Normal"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/60"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <FaFutbol className={tipoPermiso === "Normal" ? "text-[#1B6EB6]" : "text-slate-400"} />
+                <span>Reserva Normal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTipoPermisoChange("Especial")}
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  tipoPermiso === "Especial"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/60"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <FaShieldAlt className={tipoPermiso === "Especial" ? "text-indigo-600" : "text-slate-400"} />
+                <span>Permiso Especial</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Selector de Fecha */}
+          <div className="md:col-span-6">
+            <label htmlFor="fecha-reserva" className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              Fecha de Reserva {tipoPermiso === "Normal" && <span className="text-slate-400 font-normal lowercase">(solo día de hoy)</span>}
+            </label>
             <div className="relative">
               <input
                 id="fecha-reserva"
@@ -430,120 +472,142 @@ export default function HorarioPublic() {
                 }}
                 min={fechaHoy}
                 disabled={tipoPermiso === "Normal"}
-                className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-800 rounded-lg text-xs font-medium focus:outline-none focus:border-[#1B6EB6] disabled:bg-slate-100 disabled:text-slate-400"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200/90 text-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#1B6EB6] focus:ring-2 focus:ring-[#1B6EB6]/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
               />
+              <FaCalendarAlt className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs" />
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Leyenda Moderna con diseño pill ───────────────────── */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
+              Estados:
+            </span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-slate-900 border border-emerald-300 font-bold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Disponible</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-slate-900 border border-rose-200 font-bold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span>Ocupado</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-slate-900 border border-amber-300 font-bold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>En Revisión</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-900 border border-slate-300 font-bold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              <span>Pasado</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#1B6EB6] border border-blue-200 font-bold text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-[#1B6EB6]" />
+              <span>Seleccionado</span>
             </div>
           </div>
 
-          {/* Botón solicitar para Especial */}
-          <div className="md:col-span-3 flex justify-end">
-            {tipoPermiso === "Especial" && seleccionados.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowModal(true)}
-                className="w-full sm:w-auto px-4 py-1.5 rounded-lg font-bold text-xs text-white bg-[#1B6EB6] hover:bg-[#145792] transition-colors"
-              >
-                Solicitar ({seleccionados.length})
-              </button>
-            )}
+          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <FaInfoCircle className="text-slate-400" />
+            <span>Haz clic en un bloque verde para reservar</span>
           </div>
-        </div>
-
-        {/* Leyenda simple */}
-        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs">
-          <span className="flex items-center gap-1.5 text-emerald-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            Disponible
-          </span>
-          <span className="flex items-center gap-1.5 text-rose-600">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            Ocupado
-          </span>
-          <span className="flex items-center gap-1.5 text-amber-600">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            Pendiente (permiso especial)
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-            No disponible
-          </span>
-          <span className="flex items-center gap-1.5 text-[#1B6EB6] font-semibold">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#1B6EB6]"></span>
-            Seleccionado
-          </span>
         </div>
       </div>
 
-      {/* Grilla de horarios limpia */}
-      <div className="card-theme overflow-hidden">
-        <div className="max-h-[68vh] max-w-full overflow-auto">
-          <table className="w-full min-w-max border-collapse">
-            <thead className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+      {/* ─── Tabla / Grilla de Horarios Moderna ────────────────── */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="max-h-[66vh] max-w-full overflow-auto scrollbar-thin">
+          <table className="w-full min-w-max border-collapse text-left">
+            {/* Cabecera pegajosa */}
+            <thead className="sticky top-0 z-20 bg-slate-900 text-white shadow-xs">
               <tr>
-                <th className="sticky left-0 z-30 min-w-[120px] border-r border-slate-200 bg-slate-100 px-3 py-2.5 text-left text-xs font-bold text-slate-700">
-                  Horario
+                <th className="sticky left-0 z-30 min-w-[130px] bg-slate-950 px-4 py-3.5 text-xs font-black uppercase tracking-wider text-slate-300 border-r border-slate-800">
+                  <div className="flex items-center gap-1.5">
+                    <FaClock className="text-slate-400" />
+                    <span>Horario</span>
+                  </div>
                 </th>
                 {losasOrdenadas.map((losa) => (
                   <th
                     key={losa.id_l}
-                    className="min-w-[130px] border-r border-slate-200 px-3 py-2 text-center text-xs font-bold text-slate-700 last:border-r-0"
+                    className="min-w-[150px] border-r border-slate-800 px-4 py-3 text-center last:border-r-0"
                   >
-                    <div>{losa.nombre}</div>
-                    <div className="text-[10px] text-slate-400 font-normal">
+                    <div className="font-extrabold text-white text-xs tracking-tight">
+                      {losa.nombre}
+                    </div>
+                    <div className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-white/10 text-cyan-200 text-[10px] font-medium tracking-tight">
                       {getDisciplinaNombre(losa.id_d)}
                     </div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+
+            {/* Filas de horas */}
+            <tbody className="divide-y divide-slate-100">
               {horarios.map((horario, idx) => (
                 <tr
                   key={horario}
-                  className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"} hover:bg-blue-50/30 border-b border-slate-100 last:border-b-0`}
+                  className={`transition-colors ${
+                    idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"
+                  } hover:bg-slate-50/80`}
                 >
-                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50 px-3 py-1.5 text-center text-xs font-mono font-medium text-slate-600">
+                  {/* Columna de hora sticky */}
+                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-slate-100/90 backdrop-blur-xs px-3.5 py-2 text-center text-xs font-mono font-bold text-slate-700 shadow-xs">
                     {horario}
                   </td>
+
+                  {/* Celdas de cada losa */}
                   {losasOrdenadas.map((losa) => {
                     const estado = getEstadoHorario(losa.id_l, horario);
                     const seleccionado = seleccionados.some(
                       (s) => s.losaId === losa.id_l && s.horario === horario
                     );
 
-                    let estilo = "";
-                    let texto = estado;
+                    let botonClase = "";
+                    let etiqueta = "";
                     let icono = null;
 
                     if (estado === "Disponible" && seleccionado) {
-                      estilo = "bg-[#1B6EB6] text-white font-bold";
-                      texto = "Seleccionado";
-                      icono = <FaCheck className="inline mr-1 text-[10px]" />;
+                      botonClase =
+                        "bg-[#1B6EB6] text-white shadow-sm ring-2 ring-[#1B6EB6]/30 font-bold hover:bg-[#155994]";
+                      etiqueta = "Elegido";
+                      icono = <FaCheck className="text-[10px]" />;
                     } else if (estado === "Disponible") {
-                      estilo = "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer";
+                      botonClase =
+                        "bg-emerald-50 text-slate-900 border border-emerald-300 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 font-bold shadow-2xs hover:shadow-sm cursor-pointer";
+                      etiqueta = "Libre";
+                      icono = <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:bg-white shrink-0" />;
                     } else if (estado === "Ocupado") {
-                      estilo = "bg-rose-50 text-rose-600 border-rose-100 cursor-not-allowed text-[11px]";
-                      icono = <FaTimes className="inline mr-1 text-[10px]" />;
+                      botonClase =
+                        "bg-rose-50/70 text-slate-900 border border-rose-200/90 cursor-not-allowed font-bold";
+                      etiqueta = "Ocupado";
+                      icono = <FaTimes className="text-[10px] text-rose-600 shrink-0" />;
                     } else if (estado === "Pendiente") {
-                      estilo = "bg-amber-50 text-amber-700 border-amber-200 cursor-not-allowed text-[11px]";
-                      icono = <FaClock className="inline mr-1 text-[10px]" />;
+                      botonClase =
+                        "bg-amber-50 text-slate-900 border border-amber-300 cursor-not-allowed font-bold";
+                      etiqueta = "Revisión";
+                      icono = <FaClock className="text-[10px] text-amber-600 shrink-0" />;
                     } else {
-                      estilo = "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed text-[11px]";
+                      botonClase =
+                        "bg-slate-100 text-slate-800 border border-slate-300/80 cursor-not-allowed font-semibold opacity-90";
+                      etiqueta = "Pasado";
+                      icono = <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />;
                     }
 
                     return (
                       <td
                         key={`${losa.id_l}-${horario}`}
-                        className="p-1 border-r border-slate-100 last:border-r-0 text-center"
+                        className="p-1.5 border-r border-slate-100 last:border-r-0 text-center"
                       >
                         <button
                           type="button"
-                          className={`min-h-8 w-full rounded-md border px-2 py-1 text-xs transition-colors ${estilo}`}
+                          className={`group w-full h-9 rounded-xl px-2 text-xs flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 ${botonClase}`}
                           disabled={estado !== "Disponible"}
                           onClick={() => toggleEstado(losa.id_l, horario)}
                         >
                           {icono}
-                          {texto}
+                          <span>{etiqueta}</span>
                         </button>
                       </td>
                     );

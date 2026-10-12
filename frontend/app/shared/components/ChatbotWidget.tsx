@@ -22,6 +22,7 @@ interface GeminiHistoryEntry {
 }
 
 /* ── Constantes ─────────────────────────────────────────────────── */
+const BOT_AVATAR = "/images/1.jpg";
 const API_URL = `${API_BASE_URL}/chatbot/`;
 const MAX_MESSAGES_PER_SESSION = 40;
 const SESSION_KEY = "losabot_session";
@@ -259,7 +260,13 @@ export function ChatbotWidget() {
             boxShadow: "0 8px 32px rgba(27, 110, 182, 0.35)",
           }}
         >
-          <FaRobot className="text-[26px] group-hover:rotate-12 transition-transform duration-300" />
+          <div className="w-[54px] h-[54px] rounded-full overflow-hidden bg-white shadow-inner flex items-center justify-center ring-2 ring-white/80">
+            <img
+              src={BOT_AVATAR}
+              alt="LosaBot"
+              className="w-full h-full object-contain p-0.5 group-hover:scale-110 transition-transform duration-300 select-none"
+            />
+          </div>
 
           {/* Indicador de estado online + unread */}
           <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4">
@@ -305,9 +312,13 @@ export function ChatbotWidget() {
             }}
           >
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                <FaRobot className="text-lg text-cyan-200" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#1B6EB6] rounded-full" />
+              <div className="relative w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center border border-white/40 overflow-hidden shrink-0">
+                <img
+                  src={BOT_AVATAR}
+                  alt="LosaBot"
+                  className="w-full h-full object-contain p-0.5 select-none"
+                />
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full z-10" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white tracking-tight">
@@ -357,8 +368,12 @@ export function ChatbotWidget() {
               >
                 {/* Avatar del bot */}
                 {msg.sender === "bot" && (
-                  <div className="w-7 h-7 rounded-full bg-[#1B6EB6] text-white flex items-center justify-center shrink-0 text-xs shadow-sm mt-0.5">
-                    <FaRobot size={12} />
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0 shadow-xs mt-0.5 bg-white ring-1 ring-blue-100 flex items-center justify-center">
+                    <img
+                      src={BOT_AVATAR}
+                      alt="LosaBot"
+                      className="w-full h-full object-contain p-0.5 select-none"
+                    />
                   </div>
                 )}
 
@@ -404,8 +419,13 @@ export function ChatbotWidget() {
                 className="flex gap-2.5 justify-start"
                 style={{ animation: "chatbotFadeIn 0.2s ease-out" }}
               >
-                <div className="w-7 h-7 rounded-full bg-[#1B6EB6] text-white flex items-center justify-center shrink-0 text-xs shadow-sm mt-0.5">
-                  <FaRobot size={12} />
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 shrink-0 shadow-xs mt-0.5 bg-white ring-1 ring-blue-100 flex items-center justify-center">
+                  <img
+                    src={BOT_AVATAR}
+                    alt="LosaBot"
+                    className="w-full h-full object-cover object-top scale-115 select-none"
+                    style={{ imageRendering: "-webkit-optimize-contrast" }}
+                  />
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
                   <div className="flex items-center gap-1.5">
