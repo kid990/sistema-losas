@@ -564,6 +564,8 @@ async def create_user_permission(
 
 
 async def list_permissions(db: AsyncSession, estado: str | None) -> list[dict[str, Any]]:
+    if estado == "Aprobado":
+        estado = "Aceptado"
     stmt = (
         select(
             Permiso.id_p,

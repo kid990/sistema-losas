@@ -62,6 +62,7 @@ function fechaCorta(fecha: string): string {
 
 const estadoBadge: Record<string, { label: string; cls: string }> = {
   Pendiente: { label: "Pendiente", cls: "bg-amber-100 text-amber-800 border border-amber-300" },
+  Aceptado:  { label: "Aceptado",  cls: "bg-emerald-100 text-emerald-800 border border-emerald-300" },
   Aprobado:  { label: "Aprobado",  cls: "bg-emerald-100 text-emerald-800 border border-emerald-300" },
   Rechazado: { label: "Rechazado", cls: "bg-red-100 text-red-700 border border-red-300" },
   Cancelado: { label: "Cancelado", cls: "bg-slate-100 text-slate-600 border border-slate-300" },

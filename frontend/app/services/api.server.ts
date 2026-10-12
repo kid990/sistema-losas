@@ -89,6 +89,28 @@ function parseErrorBody(data: unknown): { message?: string; code?: string } {
   return (data as { message?: string; code?: string } | null) || {};
 }
 
+/* ── Normalización de rutas canónicas (evita 307 redirects en FastAPI) ── */
+const ROOT_COLLECTIONS = new Set([
+  "/permisos",
+  "/losas",
+  "/disciplinas",
+  "/imagenes",
+  "/notificaciones",
+  "/trabajadores",
+  "/users",
+  "/configuracion",
+  "/dias-bloqueados",
+  "/chatbot",
+]);
+
+function normalizeApiPath(rawPath: string): string {
+  const [pathname, search] = rawPath.split("?");
+  if (ROOT_COLLECTIONS.has(pathname)) {
+    return search !== undefined ? `${pathname}/?${search}` : `${pathname}/`;
+  }
+  return rawPath;
+}
+
 /* ── Instancia Axios (servidor) ───────────────────────────────── */
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -103,6 +125,7 @@ async function apiFetch(
   request: Request,
   config: AxiosRequestConfig = {}
 ): Promise<unknown> {
+  const urlPath = normalizeApiPath(path);
   const cookieHeader = request.headers.get("Cookie") || "";
 
   const headers: Record<string, string> = {
@@ -118,7 +141,7 @@ async function apiFetch(
   let res: AxiosResponse;
 
   try {
-    res = await axiosInstance({ ...config, url: path, headers });
+    res = await axiosInstance({ ...config, url: urlPath, headers });
   } catch (err) {
     if (isAxiosError(err) && err.code === "ECONNREFUSED") {
       throw new ApiError(
@@ -150,7 +173,7 @@ async function apiFetch(
         try {
           res = await axiosInstance({
             ...config,
-            url: path,
+            url: urlPath,
             headers: { ...headers, Cookie: newCookie },
           });
         } catch {
