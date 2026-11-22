@@ -13,11 +13,13 @@ dependencies = [
     "asyncpg>=0.30,<1.0",
     "bcrypt>=4.2,<6.0",
     "boto3>=1.35,<2.0",
+    "celery[redis]>=5.6,<6.0",
     "email-validator>=2.2,<3.0",
     "fastapi>=0.115,<1.0",
     "httpx>=0.28,<1.0",
     "pydantic-settings>=2.7,<3.0",
     "PyJWT>=2.10,<3.0",
+    "pypdf>=5.1,<7.0",
     "python-multipart>=0.0.20,<1.0",
     "reportlab>=4.2,<5.0",
     "SQLAlchemy[asyncio]>=2.0,<3.0",
@@ -25,13 +27,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+monitoring = [
+    "flower>=2.0,<3.0",
+]
 dev = [
     "aiosqlite>=0.20,<1.0",
     "mypy>=1.14,<2.0",
     "pytest>=8.3,<9.0",
     "pytest-asyncio>=0.25,<2.0",
     "pytest-cov>=6.0,<8.0",
-    "pypdf>=5.1,<7.0",
     "ruff>=0.9,<1.0",
 ]
 
@@ -55,5 +59,18 @@ strict = true
 plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore", "botocore.*", "reportlab", "reportlab.*"]
+module = [
+    "boto3",
+    "boto3.*",
+    "botocore",
+    "botocore.*",
+    "celery",
+    "celery.*",
+    "kombu",
+    "kombu.*",
+    "redis",
+    "redis.*",
+    "reportlab",
+    "reportlab.*",
+]
 ignore_missing_imports = true

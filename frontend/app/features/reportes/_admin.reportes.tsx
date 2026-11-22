@@ -159,10 +159,42 @@ export default function ReportsPage() {
     submit(event.currentTarget, { replace: true });
   }
 
-  function handleGenerate() {
-    setLoadingTitle("Generando reporte con IA…");
-    setRequestedKey(reportKey);
-    setLoadVersion((value) => value + 1);
+  async function requestGeneration(
+    loadingMessage: string,
+    successTitle: string,
+    successText: string,
+  ) {
+    setAction("regenerating");
+    setLoadingTitle(loadingMessage);
+    setPdfError(null);
+    try {
+      const response = await fetch(reportUrl, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new Error("No se pudo generar el reporte.");
+      setRequestedKey(reportKey);
+      setLoadVersion((value) => value + 1);
+      await Swal.fire({
+        icon: "success",
+        title: successTitle,
+        text: successText,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      setPdfError(error instanceof Error ? error.message : "No se pudo generar el reporte.");
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleGenerate() {
+    await requestGeneration(
+      "Generando reporte con IA…",
+      "Reporte generado",
+      "El documento se creó y se guardó correctamente en S3.",
+    );
   }
 
   async function handleRegenerate() {
@@ -177,29 +209,11 @@ export default function ReportsPage() {
     });
     if (!confirmation.isConfirmed) return;
 
-    setAction("regenerating");
-    setLoadingTitle("Regenerando reporte con IA…");
-    setPdfError(null);
-    try {
-      const response = await fetch(reportUrl, {
-        method: "POST",
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new Error("No se pudo regenerar el reporte.");
-      setRequestedKey(reportKey);
-      setLoadVersion((value) => value + 1);
-      await Swal.fire({
-        icon: "success",
-        title: "Reporte actualizado",
-        text: "La nueva versión se guardó correctamente en S3.",
-        timer: 1800,
-        showConfirmButton: false,
-      });
-    } catch (error) {
-      setPdfError(error instanceof Error ? error.message : "No se pudo regenerar el reporte.");
-    } finally {
-      setAction(null);
-    }
+    await requestGeneration(
+      "Regenerando reporte con IA…",
+      "Reporte actualizado",
+      "La nueva versión se guardó correctamente en S3.",
+    );
   }
 
   async function handleDelete() {

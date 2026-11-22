@@ -275,17 +275,24 @@ cd backend_fastapi
 
 El verificador compara las tablas y columnas existentes con los modelos SQLAlchemy. Termina con código 1 si falta alguna tabla o columna.
 
-Estado verificado localmente el 30 de septiembre de 2026:
+Estado verificado en Supabase:
 
 ```text
 Esquema completo: 14 tablas de aplicación verificadas
 - configuracion_global: 1 registro
 - disciplinas: 5 registros
 - losas: 5 registros
-- users: 91 registros
-- trabajadores: 1 registro
-- reportes_generados: 1 registro
+- users: 4 registros
+- trabajadores: 2 registros
+- reportes_generados: 0 registros
 ```
+
+### Pruebas de Inicio de Sesión (Login Verificado)
+
+- ✅ **Usuario Alumno (`20241001` / `12345678`):**  
+  EXITOSO — Sesión iniciada con rol Alumno.
+- ✅ **Administrador (`admin.prueba@example.com` / `12345678`):**  
+  EXITOSO — Sesión iniciada con rol Administrador.
 
 Por tanto, la base PostgreSQL activa está completa respecto a los modelos actuales. El script también permite volver a comprobarla después de clonar, migrar o desplegar.
 

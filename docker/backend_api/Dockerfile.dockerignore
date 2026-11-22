@@ -1,0 +1,14 @@
+.git
+.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.venv
+backend_fastapi
+frontend
+DB
+PG
+ref_reserva_losas
+specs
+*.rar

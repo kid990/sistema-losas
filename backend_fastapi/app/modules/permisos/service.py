@@ -10,7 +10,6 @@ from starlette.datastructures import UploadFile
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.serialization import model_dict
-from app.integrations.email import send_email
 from app.integrations.storage import (
     delete_file,
     download_file,
@@ -33,6 +32,7 @@ from app.models import (
 )
 from app.modules.permisos.document_review import analyze_document, rejection_reasons
 from app.modules.permisos.schemas import DetallePermisoIn, PermisoIn, PermisoTrabajadorIn
+from app.queue.dispatch import dispatch_email
 
 
 def _utc_naive() -> datetime:
@@ -545,7 +545,7 @@ async def create_user_permission(
     user = await db.get(User, user_id)
     external = await get_usuario(user.codigo) if user else None
     if external and user and external.get("email"):
-        await send_email(
+        await dispatch_email(
             str(external["email"]),
             "Permiso registrado",
             f"Su permiso tipo {payload.tipo} fue {final_status}",
@@ -762,7 +762,7 @@ async def update_status(db: AsyncSession, permission_id: int, estado: str, worke
             recipient = str(external.get("email") or "")
             recipient_name = str(external.get("nombre_completo") or recipient_name)
     if recipient:
-        await send_email(
+        await dispatch_email(
             recipient,
             "Estado de permiso actualizado",
             f"Tu permiso {permission.tipo} fue actualizado a: {estado}.",
@@ -887,7 +887,7 @@ async def create_worker_permission(
         raise
     worker = await db.get(Trabajador, payload.id_t)
     if worker and worker.email:
-        await send_email(
+        await dispatch_email(
             worker.email,
             "Permiso registrado",
             f"Se ha registrado un permiso de tipo {payload.tipo}",

@@ -42,65 +42,65 @@ const tableCustomStyles = {
   table: {
     style: {
       backgroundColor: "transparent",
-      borderRadius: "16px",
+      borderRadius: "14px",
       overflow: "hidden",
     },
   },
   rows: {
     style: {
-      backgroundColor: "#ffffff",
-      color: "#1e293b",
+      backgroundColor: "var(--ui-surface)",
+      color: "var(--ui-ink)",
       fontSize: "14px",
       fontWeight: "400",
       minHeight: "56px",
-      borderBottom: "1px solid #f1f5f9",
+      borderBottom: "1px solid var(--ui-line)",
       transition: "all 0.15s ease",
     },
     stripedStyle: {
-      backgroundColor: "#f8fafc",
-      borderBottom: "1px solid #f1f5f9",
+      backgroundColor: "var(--ui-surface-raised)",
+      borderBottom: "1px solid var(--ui-line)",
     },
     highlightOnHoverStyle: {
-      backgroundColor: "#f0f7ff",
+      backgroundColor: "var(--color-primary-50)",
       transition: "background-color 0.15s ease",
     },
   },
   headRow: {
     style: {
-      background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
-      borderBottom: "2px solid #e2e8f0",
+      background: "var(--ui-surface-raised)",
+      borderBottom: "1px solid var(--ui-line)",
       minHeight: "48px",
     },
   },
   headCells: {
     style: {
-      color: "#475569",
+      color: "var(--ui-muted)",
       fontSize: "12.5px",
       fontWeight: "700",
-      textTransform: "uppercase" as const,
-      letterSpacing: "0.06em",
+      textTransform: "none" as const,
+      letterSpacing: "normal",
       padding: "14px 18px",
     },
   },
   cells: {
     style: {
-      color: "#1e293b",
+      color: "var(--ui-ink)",
       padding: "12px 18px",
     },
   },
   pagination: {
     style: {
-      backgroundColor: "#ffffff",
-      color: "#475569",
-      borderTop: "1px solid #e2e8f0",
+      backgroundColor: "var(--ui-surface)",
+      color: "var(--ui-muted)",
+      borderTop: "1px solid var(--ui-line)",
       fontSize: "13px",
       minHeight: "52px",
       padding: "8px 16px",
     },
     pageButtonsStyle: {
-      color: "#1B6EB6",
-      fill: "#1B6EB6",
-      backgroundColor: "#f0f7ff",
+      color: "var(--ui-primary)",
+      fill: "var(--ui-primary)",
+      backgroundColor: "var(--color-primary-50)",
       borderRadius: "8px",
       margin: "0 3px",
       padding: "6px",
@@ -109,22 +109,22 @@ const tableCustomStyles = {
   },
   noData: {
     style: {
-      color: "#64748b",
+      color: "var(--ui-muted)",
       fontSize: "14px",
       padding: "36px 16px",
-      backgroundColor: "#ffffff",
+      backgroundColor: "var(--ui-surface)",
     },
   },
   progress: {
     style: {
       backgroundColor: "transparent",
-      color: "#1B6EB6",
+      color: "var(--ui-primary)",
     },
   },
   expanderRow: {
     style: {
-      backgroundColor: "#f8fafc",
-      color: "#1e293b",
+      backgroundColor: "var(--ui-surface-raised)",
+      color: "var(--ui-ink)",
     },
   },
 };
@@ -176,7 +176,7 @@ export function TablaGenerica({
       {buscador && <div className="mb-4">{buscador}</div>}
       {!isClient ? (
         // SSR: skeleton estático para evitar hydration mismatch de react-data-table-component
-        <div className="animate-pulse bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="animate-pulse bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)]">
           <div className="h-11 bg-slate-100 rounded-xl mb-2" />
           {Array.from({ length: Math.min(datos.length || 3, 5) }).map((_, i) => (
             <div key={i} className="h-12 bg-slate-50 border-b border-slate-100 rounded-lg mb-1" />
@@ -184,7 +184,7 @@ export function TablaGenerica({
           <div className="h-11 bg-slate-100 rounded-xl mt-2" />
         </div>
       ) : (
-        <div className="table-surface bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] overflow-hidden">
+        <div className="table-surface bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden">
           <DataTable
             columns={columnasFinales}
             data={datos}

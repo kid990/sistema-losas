@@ -6,6 +6,7 @@ import {
   FaUser, FaSignOutAlt, FaBars, FaChevronUp,
   FaRobot, FaChartBar,
 } from "react-icons/fa";
+import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 const groups = [
   { title: "General", items: [
@@ -58,12 +59,10 @@ export function Sidebar({ nombreUsuario, onToggleSidebar, sidebarOpen, toggleRef
       {/* ── Header compacto ── */}
       <div className="admin-brand-compact">
         <NavLink to="/dashboard/inicio" className="admin-brand-logo" aria-label="Ir al inicio">
-          <span className="admin-brand-mark" aria-hidden="true">
-            <FaThLarge size={15} />
-          </span>
+          <img src="/images/logo.png" alt="" width={44} height={44} />
           <span className="admin-brand-text">
-            <strong>SIRLOD<span className="text-[var(--color-primary-500)]">.</span></strong>
-            <span className="block text-[10px] text-slate-400 font-medium tracking-tight -mt-0.5">Panel Administrativo</span>
+            <span className="admin-brand-eyebrow">Administrador</span>
+            <strong>Panel de Bienestar</strong>
           </span>
         </NavLink>
         {/* Botón toggle sidebar */}
@@ -90,13 +89,7 @@ export function Sidebar({ nombreUsuario, onToggleSidebar, sidebarOpen, toggleRef
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ${
-                    isActive
-                      ? "bg-blue-50 text-[#1B6EB6] font-bold shadow-xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#1B6EB6] before:rounded-r-full"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`
-                }
+                className={({ isActive }) => `area-nav-link ${isActive ? "is-active" : ""}`}
               >
                 <item.icon aria-hidden="true" size={15} className="shrink-0" />
                 <span>{item.label}</span>
@@ -108,6 +101,9 @@ export function Sidebar({ nombreUsuario, onToggleSidebar, sidebarOpen, toggleRef
 
       {/* ── Footer: Perfil ── */}
       <div className="admin-sidebar-footer">
+        <div className="sidebar-theme-row">
+          <ThemeToggle showLabel className="theme-toggle--wide" />
+        </div>
         {/* Submenú del perfil (aparece arriba) */}
         {profileOpen && (
           <div ref={profileMenuRef} className="admin-sidebar-profile-menu" role="menu" aria-label="Opciones de usuario">

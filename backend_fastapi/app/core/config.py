@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     app_host: str = "127.0.0.1"
     app_port: int = 3000
     database_url: str | None = None
+    database_ssl_mode: Literal["disable", "prefer", "require", "verify-ca", "verify-full"] = "disable"
+    database_pool_size: int = Field(default=5, ge=1, le=20)
+    database_max_overflow: int = Field(default=5, ge=0, le=20)
+    database_pool_timeout_seconds: int = Field(default=30, ge=1, le=120)
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str = "postgres"
@@ -38,6 +42,14 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     cors_origins: list[str] = ["http://localhost:5173"]
     unheval_api_url: str = "http://localhost:3001/api"
+
+    queue_enabled: bool = False
+    redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str | None = None
+    celery_result_backend: str | None = None
+    celery_task_time_limit_seconds: int = Field(default=900, ge=30, le=7200)
+    celery_result_expires_seconds: int = Field(default=86400, ge=300, le=604800)
+    queue_fail_open: bool = True
 
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
@@ -107,6 +119,14 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             database=self.postgres_db,
         ).render_as_string(hide_password=False)
+
+    @property
+    def queue_broker_url(self) -> str:
+        return self.celery_broker_url or self.redis_url
+
+    @property
+    def queue_result_backend(self) -> str:
+        return self.celery_result_backend or self.redis_url
 
 
 @lru_cache

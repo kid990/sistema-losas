@@ -12,6 +12,7 @@ import {
   FaBars,
   FaThLarge,
 } from "react-icons/fa";
+import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 interface SidebarUserProps {
   nombre?: string;
@@ -56,16 +57,14 @@ export function SidebarUser({
   const inicial = (nombre || "U").charAt(0).toUpperCase();
 
   return (
-    <nav className="admin-sidebar" aria-label="Menú del estudiante">
+    <nav className="admin-sidebar" aria-label="Menú del portal de reservas">
       {/* ── Header compacto de 56px ── */}
       <div className="admin-brand-compact">
         <NavLink to="/losas" className="admin-brand-logo" onClick={onClose} aria-label="Ir a losas">
-          <span className="admin-brand-mark" aria-hidden="true">
-            <FaThLarge size={15} />
-          </span>
+          <img src="/images/logo.png" alt="" width={44} height={44} />
           <span className="admin-brand-text">
-            <strong>SIRLOD<span className="text-[var(--color-primary-500)]">.</span></strong>
-            <span className="block text-[10px] text-slate-400 font-medium tracking-tight -mt-0.5">Portal Alumnos</span>
+            <span className="admin-brand-eyebrow">Usuario UNHEVAL</span>
+            <strong>Reserva de losas</strong>
           </span>
         </NavLink>
         {/* Botón toggle sidebar */}
@@ -92,18 +91,12 @@ export function SidebarUser({
               key={item.to}
               to={item.to}
               onClick={onClose}
-              className={({ isActive }) =>
-                `relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all ${
-                  isActive
-                    ? "bg-blue-50 text-[#1B6EB6] font-bold shadow-xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#1B6EB6] before:rounded-r-full"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`
-              }
+              className={({ isActive }) => `area-nav-link ${isActive ? "is-active" : ""}`}
             >
               <item.icon size={15} className="shrink-0" />
               <span>{item.label}</span>
               {item.to === "/notificaciones" && notificacionesNoLeidas > 0 && (
-                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white shadow-2xs">
+                <span className="nav-count">
                   {notificacionesNoLeidas > 99 ? "99+" : notificacionesNoLeidas}
                 </span>
               )}
@@ -114,6 +107,9 @@ export function SidebarUser({
 
       {/* ── Footer: Perfil con submenú pop-up ── */}
       <div className="admin-sidebar-footer">
+        <div className="sidebar-theme-row">
+          <ThemeToggle showLabel className="theme-toggle--wide" />
+        </div>
         {profileOpen && (
           <div ref={profileMenuRef} className="admin-sidebar-profile-menu" role="menu" aria-label="Opciones de perfil">
             <NavLink

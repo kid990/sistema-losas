@@ -114,13 +114,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ variant = "primary", children, className = "", size = "md", loading, disabled, ...props }: ButtonProps) {
   const variants = {
     primary:
-      "bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] text-white shadow-md shadow-[var(--color-primary-500)]/20 hover:shadow-lg hover:shadow-[var(--color-primary-500)]/30 hover:from-[var(--color-primary-600)] hover:to-[var(--color-primary-700)]",
+      "bg-[var(--color-primary-500)] text-white hover:bg-[var(--color-primary-700)]",
     danger:
-      "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-500/20 hover:shadow-lg hover:shadow-red-500/30 hover:from-red-600 hover:to-red-700",
+      "bg-[var(--color-status-danger)] text-white hover:brightness-90",
     secondary:
       "bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--border-light)] hover:border-[var(--text-muted)]",
     success:
-      "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 hover:from-emerald-600 hover:to-emerald-700",
+      "bg-[var(--color-status-success)] text-white hover:brightness-90",
     ghost:
       "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]",
   };

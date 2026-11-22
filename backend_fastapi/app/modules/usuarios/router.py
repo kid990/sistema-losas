@@ -1,18 +1,30 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, status
 
 from app.core.database import DBSession
+from app.core.security import CurrentUser, require_roles
+from app.modules.jobs import service as jobs_service
+from app.modules.jobs.schemas import JobQueued
 from app.modules.usuarios import service
 from app.modules.usuarios.schemas import EstadoUsuarioIn, PasswordChange
+from app.queue.dispatch import enqueue
+from app.queue.tasks.users import synchronize_users_task
 
 router = APIRouter(prefix="/users", tags=["Usuarios"])
+Admin = Annotated[CurrentUser, Depends(require_roles("Administrador"))]
 
 
 @router.post("/cargar")
 async def load_users(db: DBSession) -> dict[str, Any]:
     data = await service.load_users(db)
     return {"success": True, "message": "Carga masiva completada", "data": data}
+
+
+@router.post("/cargar-async", response_model=JobQueued, status_code=status.HTTP_202_ACCEPTED)
+def load_users_async(_admin: Admin) -> JobQueued:
+    task_id = enqueue(synchronize_users_task, queue="sync")
+    return jobs_service.queued(task_id)
 
 
 @router.put("/estado")

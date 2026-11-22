@@ -13,9 +13,9 @@ export default function SecurityLayout() {
   const { user } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--bg-body)]">
+    <div className="app-shell app-shell--security flex flex-col min-h-screen bg-[var(--bg-body)]">
       <NavbarSeguridad nombreUsuario={user.nombre} />
-      <main className="flex-1 max-w-[1400px] w-full mx-auto p-4 md:p-6 overflow-auto">
+      <main className="security-content flex-1 overflow-auto">
         <Breadcrumb />
         <Outlet />
       </main>

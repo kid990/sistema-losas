@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { FaCheckCircle, FaRobot, FaShieldAlt, FaTimesCircle } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
+import { queuedTaskId, waitForJob } from "~/services/jobs.server";
 import { Badge, Button } from "~/shared/components/ui";
 
 interface PendingPermission {
@@ -37,8 +38,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
   try {
-    const response = await api.post("/permisos/revision-automatica", request);
-    return data({ ok: true, summary: (response as Record<string, unknown>).data as ReviewSummary });
+    let summary: ReviewSummary;
+    let queued: unknown;
+    try {
+      queued = await api.post("/permisos/revision-automatica-async", request);
+    } catch {
+      queued = null;
+    }
+    if (queued) {
+      summary = await waitForJob<ReviewSummary>(queuedTaskId(queued), request);
+    } else {
+      const response = await api.post("/permisos/revision-automatica", request);
+      summary = (response as Record<string, unknown>).data as ReviewSummary;
+    }
+    return data({ ok: true, summary });
   } catch (error) {
     return data(
       { ok: false, error: error instanceof Error ? error.message : "No se pudo ejecutar la revisión" },

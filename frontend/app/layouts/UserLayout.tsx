@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Outlet, useLoaderData, redirect, data, useLocation } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Outlet, useLoaderData, redirect, data, useLocation, NavLink } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireAuth } from "~/services/auth.server";
 import { api, responseHeadersWithCookies } from "~/services/api.server";
@@ -8,7 +8,6 @@ import { Breadcrumb } from "~/shared/components/ui/Breadcrumb";
 import { ChatbotWidget } from "~/shared/components/ChatbotWidget";
 import { ROLES } from "~/shared/types/roles";
 import { FaBell } from "react-icons/fa";
-import { NavLink } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireAuth(request);
@@ -46,6 +45,8 @@ export default function UserLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -58,6 +59,39 @@ export default function UserLayout() {
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
+  useEffect(() => {
+    if (!sidebarOpen || isDesktop) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    sidebarRef.current?.querySelector<HTMLElement>("button, a[href]")?.focus();
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSidebarOpen(false);
+      }
+      if (event.key !== "Tab") return;
+      const elements = sidebarRef.current?.querySelectorAll<HTMLElement>("button, a[href]");
+      if (!elements?.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+      toggleRef.current?.focus();
+    };
+  }, [sidebarOpen, isDesktop]);
+
   const sidebarVisible = isDesktop ? !desktopCollapsed : sidebarOpen;
   const toggleSidebar = () => isDesktop
     ? setDesktopCollapsed((prev) => !prev)
@@ -65,7 +99,7 @@ export default function UserLayout() {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="admin-shell min-h-screen">
+    <div className="admin-shell app-shell app-shell--user min-h-screen">
       {/* Overlay para móvil */}
       {sidebarOpen && (
         <div
@@ -78,6 +112,11 @@ export default function UserLayout() {
       {/* Sidebar fijo a la izquierda */}
       <div
         id="user-sidebar"
+        ref={sidebarRef}
+        inert={!sidebarVisible}
+        role={!isDesktop && sidebarOpen ? "dialog" : undefined}
+        aria-modal={!isDesktop && sidebarOpen ? true : undefined}
+        aria-label="Menú del portal de reservas"
         className={`
           fixed inset-y-0 left-0 z-40
           transition-transform duration-300 ease-in-out
@@ -91,17 +130,20 @@ export default function UserLayout() {
           onClose={closeSidebar}
           onToggleSidebar={toggleSidebar}
           sidebarOpen={sidebarVisible}
+          toggleRef={toggleRef}
         />
       </div>
 
       {/* Main content */}
       <main
-        className={`min-h-screen min-w-0 flex flex-col ${desktopCollapsed ? "lg:ml-0" : "lg:ml-[260px]"}`}
+        inert={sidebarOpen && !isDesktop}
+        className={`min-h-screen min-w-0 flex flex-col ${desktopCollapsed ? "lg:ml-0" : "lg:ml-[272px]"}`}
       >
         {/* Topbar móvil */}
         <div className="admin-mobile-topbar lg:hidden flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-200">
           <div className="flex items-center gap-2">
             <button
+              ref={!isDesktop ? toggleRef : undefined}
               type="button"
               aria-expanded={sidebarOpen}
               aria-label="Abrir menú"
@@ -112,7 +154,7 @@ export default function UserLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <span className="text-sm font-semibold text-[var(--text-primary)]">SIRLOD • Alumnos</span>
+            <span className="mobile-brand">Reserva de losas</span>
           </div>
 
           <NavLink

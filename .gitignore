@@ -10,6 +10,7 @@ node_modules/
 .env.*
 !.env.example
 !**/.env.example
+!**/.env.docker.example
 *.key
 *.pem
 
@@ -39,6 +40,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Reference material / nested clones (not part of the project)
+/ref_reserva_losas/
 
 # Local AI/editor tooling (not application source)
 /.agents/

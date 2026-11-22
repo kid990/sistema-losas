@@ -25,9 +25,22 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Epunda+Sans:wght@300..900&family=Epunda+Slab:wght@300..900&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap",
   },
 ];
+
+const themeScript = `
+  (() => {
+    try {
+      const stored = localStorage.getItem("sirlod-theme");
+      const theme = stored === "light" || stored === "dark"
+        ? stored
+        : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    } catch (_) {}
+  })();
+`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,9 +51,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <title>Sistema de Permisos UNHEVAL</title>
         <Meta />
         <Links />
-
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="bg-[var(--bg-body)] text-[var(--text-primary)] antialiased font-sans">
+      <body className="bg-[var(--bg-body)] text-[var(--text-primary)] antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -56,8 +69,8 @@ function NavigationProgressBar() {
   if (!isNavigating) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-9999 h-1 bg-transparent pointer-events-none overflow-hidden">
-      <div className="h-full bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-400 animate-pulse w-full transition-all duration-300" />
+    <div className="navigation-progress" role="progressbar" aria-label="Cargando página">
+      <div />
     </div>
   );
 }
@@ -87,12 +100,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-8">
-      <div className="text-center max-w-md animate-fade-in">
+    <main className="min-h-screen flex items-center justify-center p-6 bg-[var(--bg-body)]">
+      <div className="error-surface text-center max-w-md">
         {is404 ? (
-          <div className="text-8xl font-black text-blue-600/20 mb-4">404</div>
+          <div className="font-display text-8xl font-bold text-[var(--color-primary-500)] mb-4">404</div>
         ) : (
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-100 flex items-center justify-center text-4xl">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-xl bg-[var(--color-status-danger-soft)] text-[var(--color-status-danger)] flex items-center justify-center text-4xl">
             ⚠️
           </div>
         )}
@@ -100,7 +113,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         <p className="text-[var(--text-secondary)] mb-8">{details}</p>
         <a
           href="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+          className="app-button app-button--primary"
         >
           ← Volver al inicio
         </a>

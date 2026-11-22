@@ -1,12 +1,16 @@
 from datetime import date
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 
 from app.core.database import DBSession
 from app.core.security import CurrentUser, require_roles
+from app.modules.jobs import service as jobs_service
+from app.modules.jobs.schemas import JobQueued
 from app.modules.reportes import service
+from app.queue.dispatch import enqueue
+from app.queue.tasks.reports import regenerate_report_task
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 Admin = Annotated[CurrentUser, Depends(require_roles("Administrador"))]
@@ -73,6 +77,21 @@ async def regenerate_report(
         "message": "Reporte regenerado correctamente",
         "data": {"nombre_archivo": document.filename},
     }
+
+
+@router.post(
+    "/regenerar-async",
+    response_model=JobQueued,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def regenerate_report_async(
+    admin: Admin,
+    periodo: Literal["mensual", "anual"] = Query(default="mensual"),
+    anio: int = Query(default_factory=lambda: date.today().year, ge=2020, le=2100),
+    mes: int = Query(default_factory=lambda: date.today().month, ge=1, le=12),
+) -> JobQueued:
+    task_id = enqueue(regenerate_report_task, periodo, anio, mes, admin.id, queue="reports")
+    return jobs_service.queued(task_id)
 
 
 @router.delete("")

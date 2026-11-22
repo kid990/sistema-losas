@@ -11,6 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
 from sqlalchemy import text
 from starlette.responses import Response
 
@@ -24,6 +25,7 @@ from app.modules.configuracion.router import router as configuracion_router
 from app.modules.dias_bloqueados.router import router as dias_router
 from app.modules.disciplinas.router import router as disciplinas_router
 from app.modules.imagenes.router import router as imagenes_router
+from app.modules.jobs.router import router as jobs_router
 from app.modules.losas.router import router as losas_router
 from app.modules.notificaciones.router import router as notificaciones_router
 from app.modules.permisos.router import router as permisos_router
@@ -156,7 +158,17 @@ async def ready() -> dict[str, str]:
             await connection.execute(text("SELECT 1"))
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Base de datos no disponible") from exc
-    return {"status": "READY"}
+    queue_status = "DISABLED"
+    if settings.queue_enabled:
+        redis = Redis.from_url(settings.queue_broker_url)
+        try:
+            await redis.ping()
+            queue_status = "READY"
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail="Redis no disponible") from exc
+        finally:
+            await redis.aclose()
+    return {"status": "READY", "queue": queue_status}
 
 
 for router in (
@@ -173,5 +185,6 @@ for router in (
     notificaciones_router,
     reportes_router,
     chatbot_router,
+    jobs_router,
 ):
     app.include_router(router, prefix="/api")

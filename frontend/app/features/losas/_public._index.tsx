@@ -21,6 +21,7 @@ import {
   FaUniversity,
   FaUserCheck,
 } from "react-icons/fa";
+import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUser(request);
@@ -196,14 +197,14 @@ export default function Home() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white font-sans text-slate-900 selection:bg-[var(--color-primary-500)] selection:text-white">
+    <div className="min-h-screen overflow-x-clip bg-[var(--bg-body)] font-sans text-[var(--text-primary)] selection:bg-[var(--color-primary-500)] selection:text-white">
       <a
         href="#contenido-principal"
         className="fixed left-4 top-4 z-[60] -translate-y-24 rounded-lg bg-white px-4 py-3 font-bold text-[var(--color-unheval-navy)] shadow-lg transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] motion-reduce:transition-none"
       >
         Ir al contenido principal
       </a>
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+      <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
         <div className="hidden bg-[var(--color-primary-500)] text-white sm:block">
           <div className="mx-auto flex min-h-10 max-w-[1320px] items-center justify-between px-6 py-2 text-xs font-semibold">
             <span>Universidad Nacional Hermilio Valdizán</span>
@@ -242,18 +243,22 @@ export default function Home() {
             </span>
           </Link>
 
-          <Link
-            to="/login"
-            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-primary-500)] px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[var(--color-primary-600)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:ring-offset-2 active:scale-[0.97] motion-reduce:transform-none sm:px-4"
-          >
-            <FaUserCheck aria-hidden="true" />
-            Iniciar sesión
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              to="/login"
+              className="app-button app-button--primary whitespace-nowrap"
+            >
+              <FaUserCheck aria-hidden="true" />
+              <span className="hidden sm:inline">Iniciar sesión</span>
+              <span className="sm:hidden">Ingresar</span>
+            </Link>
+          </div>
         </div>
       </header>
 
       <main id="contenido-principal" tabIndex={-1}>
-        <section className="relative overflow-hidden bg-[#f7f9fc] px-4 py-8 sm:px-6 sm:py-12 lg:py-14">
+        <section className="relative overflow-hidden bg-[var(--bg-body)] px-4 py-8 sm:px-6 sm:py-12 lg:py-14">
           <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[46%] bg-[var(--color-primary-50)] lg:block" />
           <div className="relative mx-auto grid max-w-[1320px] items-center gap-8 lg:grid-cols-12 lg:gap-10">
             <div className="animate-fade-in-up motion-reduce:animate-none lg:col-span-5">

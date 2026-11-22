@@ -1,0 +1,17 @@
+.git
+.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+!frontend/.env.docker
+**/node_modules
+**/.venv
+frontend/.react-router
+frontend/build
+backend_api
+backend_fastapi
+DB
+PG
+ref_reserva_losas
+specs
+*.rar

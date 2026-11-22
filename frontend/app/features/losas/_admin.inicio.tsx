@@ -4,19 +4,25 @@ import { data } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
 import {
-  FaKey, FaUserTie, FaThLarge, FaBriefcase,
-  FaArrowRight, FaCheckCircle, FaTimesCircle,
-  FaClock, FaExclamationTriangle, FaBell, FaCalendarCheck,
+  FaKey,
+  FaUserTie,
+  FaThLarge,
+  FaBriefcase,
+  FaArrowRight,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaExclamationTriangle,
+  FaBell,
+  FaCalendarCheck,
 } from "react-icons/fa";
 
 type Permiso = Record<string, unknown>;
-type Notif   = Record<string, unknown>;
+type Notif = Record<string, unknown>;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
 
-  // En lugar de hacer 3 llamadas separadas a /permisos (Pendiente, Aceptado, Rechazado),
-  // traemos la lista consolidada de permisos una sola vez y filtramos en memoria.
   const [usuariosRes, trabajadoresRes, losasRes, permisosRes, notifsRes] = await Promise.all([
     api.get("/users", request).catch(() => []),
     api.get("/trabajadores", request).catch(() => []),
@@ -25,385 +31,247 @@ export async function loader({ request }: LoaderFunctionArgs) {
     api.get("/notificaciones", request).catch(() => ({ data: [] })),
   ]);
 
-  const count = (r: unknown) => {
-    if (Array.isArray(r)) return r.length;
-    if (r && typeof r === "object" && "data" in r && Array.isArray((r as { data: unknown[] }).data))
-      return (r as { data: unknown[] }).data.length;
+  const count = (response: unknown) => {
+    if (Array.isArray(response)) return response.length;
+    if (
+      response &&
+      typeof response === "object" &&
+      "data" in response &&
+      Array.isArray((response as { data: unknown[] }).data)
+    ) {
+      return (response as { data: unknown[] }).data.length;
+    }
     return 0;
   };
-  const toArr = (r: unknown): Permiso[] => {
-    if (Array.isArray(r)) return r as Permiso[];
-    if (r && typeof r === "object" && "data" in r && Array.isArray((r as { data: unknown[] }).data))
-      return (r as { data: Permiso[] }).data;
+
+  const toArray = (response: unknown): Permiso[] => {
+    if (Array.isArray(response)) return response as Permiso[];
+    if (
+      response &&
+      typeof response === "object" &&
+      "data" in response &&
+      Array.isArray((response as { data: unknown[] }).data)
+    ) {
+      return (response as { data: Permiso[] }).data;
+    }
     return [];
   };
 
-  const todosPermisos = toArr(permisosRes);
-  const pendientesList = todosPermisos.filter((p) => p.estado === "Pendiente");
-  const aprobadosCount = todosPermisos.filter((p) => p.estado === "Aceptado" || p.estado === "Aprobado").length;
-  const rechazadosCount = todosPermisos.filter((p) => p.estado === "Rechazado").length;
+  const todosPermisos = toArray(permisosRes);
+  const pendientesList = todosPermisos.filter((permiso) => permiso.estado === "Pendiente");
+  const aprobadosCount = todosPermisos.filter(
+    (permiso) => permiso.estado === "Aceptado" || permiso.estado === "Aprobado"
+  ).length;
+  const rechazadosCount = todosPermisos.filter((permiso) => permiso.estado === "Rechazado").length;
 
   return data({
-    totalUsuarios:     count(usuariosRes),
+    totalUsuarios: count(usuariosRes),
     totalTrabajadores: count(trabajadoresRes),
-    totalLosas:        count(losasRes),
-    pendientes:        pendientesList.length,
-    aprobados:         aprobadosCount,
-    rechazados:        rechazadosCount,
+    totalLosas: count(losasRes),
+    pendientes: pendientesList.length,
+    aprobados: aprobadosCount,
+    rechazados: rechazadosCount,
     ultimosPendientes: pendientesList.slice(0, 5),
-    ultimasNotifs:     (toArr(notifsRes) as Notif[]).slice(0, 6),
+    ultimasNotifs: (toArray(notifsRes) as Notif[]).slice(0, 6),
   });
 }
 
 function fechaCorta(fecha: string): string {
   if (!fecha) return "—";
   return new Date(fecha).toLocaleDateString("es-PE", {
-    day: "2-digit", month: "short", year: "numeric",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
-const estadoBadge: Record<string, { label: string; cls: string }> = {
-  Pendiente: { label: "Pendiente", cls: "bg-amber-100 text-amber-800 border border-amber-300" },
-  Aceptado:  { label: "Aceptado",  cls: "bg-emerald-100 text-emerald-800 border border-emerald-300" },
-  Aprobado:  { label: "Aprobado",  cls: "bg-emerald-100 text-emerald-800 border border-emerald-300" },
-  Rechazado: { label: "Rechazado", cls: "bg-red-100 text-red-700 border border-red-300" },
-  Cancelado: { label: "Cancelado", cls: "bg-slate-100 text-slate-600 border border-slate-300" },
-};
-
-const notifCfg: Record<string, { Icon: typeof FaBell; cls: string; bg: string }> = {
-  Aceptado:  { Icon: FaCheckCircle,        cls: "text-emerald-600", bg: "bg-emerald-100" },
-  Rechazado: { Icon: FaTimesCircle,        cls: "text-red-500",     bg: "bg-red-100"     },
-  Pendiente: { Icon: FaClock,              cls: "text-amber-500",   bg: "bg-amber-100"   },
-  Cancelado: { Icon: FaExclamationTriangle,cls: "text-slate-500",   bg: "bg-slate-100"   },
+const notificationConfig: Record<string, { Icon: typeof FaBell; className: string }> = {
+  Aceptado: { Icon: FaCheckCircle, className: "text-[var(--color-status-success)]" },
+  Aprobado: { Icon: FaCheckCircle, className: "text-[var(--color-status-success)]" },
+  Rechazado: { Icon: FaTimesCircle, className: "text-[var(--color-status-danger)]" },
+  Pendiente: { Icon: FaClock, className: "text-[var(--color-status-warning)]" },
+  Cancelado: { Icon: FaExclamationTriangle, className: "text-[var(--text-muted)]" },
 };
 
 export default function AdminInicio() {
   const {
-    totalUsuarios     = 0,
+    totalUsuarios = 0,
     totalTrabajadores = 0,
-    totalLosas        = 0,
-    pendientes        = 0,
-    aprobados         = 0,
-    rechazados        = 0,
+    totalLosas = 0,
+    pendientes = 0,
+    aprobados = 0,
+    rechazados = 0,
     ultimosPendientes = [],
-    ultimasNotifs     = [],
+    ultimasNotifs = [],
   } = useLoaderData<typeof loader>();
 
-  const kpis = [
-    {
-      label: "Pendientes",
-      hint:  "Requieren revisión",
-      value: pendientes,
-      Icon:  FaKey,
-      gradient: "from-amber-400 to-orange-500",
-      glow:     "shadow-orange-200",
-      route:    "/dashboard/permisos",
-    },
-    {
-      label: "Aprobadas",
-      hint:  "Reservas confirmadas",
-      value: aprobados,
-      Icon:  FaCalendarCheck,
-      gradient: "from-emerald-400 to-teal-500",
-      glow:     "shadow-teal-200",
-      route:    "/dashboard/detalle-permisos",
-    },
-    {
-      label: "Rechazadas",
-      hint:  "Solicitudes denegadas",
-      value: rechazados,
-      Icon:  FaTimesCircle,
-      gradient: "from-rose-400 to-pink-600",
-      glow:     "shadow-pink-200",
-      route:    "/dashboard/permisos",
-    },
-    {
-      label: "Losas activas",
-      hint:  "Espacios deportivos",
-      value: totalLosas,
-      Icon:  FaThLarge,
-      gradient: "from-blue-500 to-indigo-600",
-      glow:     "shadow-indigo-200",
-      route:    "/dashboard/losas",
-    },
-  ];
-
   return (
-    <div className="space-y-8">
-
-      {/* ── Encabezado con banner de alerta si hay pendientes ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
-            Panel de control
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            Vista general del sistema · SIRLOD – UNHEVAL
+    <div className="space-y-7">
+      <section className="role-hero" aria-labelledby="admin-home-title">
+        <div className="role-hero__copy">
+          <p className="role-hero__eyebrow">Gestión deportiva UNHEVAL</p>
+          <h1 id="admin-home-title">Panel de Bienestar</h1>
+          <p className="role-hero__description">
+            Revisa solicitudes, controla la infraestructura deportiva y mantén la agenda de losas lista para la comunidad universitaria.
           </p>
+          {pendientes > 0 && (
+            <div className="mt-5">
+              <Link to="/dashboard/permisos" className="role-hero__action">
+                <FaKey aria-hidden="true" />
+                Revisar {pendientes} pendiente{pendientes === 1 ? "" : "s"}
+              </Link>
+            </div>
+          )}
         </div>
-        {pendientes > 0 && (
-          <Link
-            to="/dashboard/permisos"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] hover:shadow-lg"
-            style={{ background: "linear-gradient(135deg,#f59e0b,#ef4444)" }}
-          >
-            <FaKey size={13} aria-hidden="true" />
-            {pendientes} solicitud{pendientes !== 1 ? "es" : ""} pendiente{pendientes !== 1 ? "s" : ""}
-            <FaArrowRight size={11} aria-hidden="true" />
-          </Link>
-        )}
-      </div>
 
-      {/* ── KPIs con gradientes ── */}
-      <section aria-label="Indicadores clave" className="grid grid-cols-2 xl:grid-cols-4 gap-5">
-        {kpis.map((k) => (
-          <Link
-            key={k.label}
-            to={k.route}
-            className={`group relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between min-h-[140px] bg-gradient-to-br ${k.gradient} shadow-lg ${k.glow} hover:shadow-xl hover:scale-[1.02] transition-all duration-200`}
-          >
-            {/* Círculo decorativo */}
-            <span className="absolute -top-5 -right-5 w-24 h-24 rounded-full bg-white/10 pointer-events-none" />
-            <span className="absolute -bottom-6 -right-2 w-16 h-16 rounded-full bg-white/10 pointer-events-none" />
-
-            <div className="flex items-start justify-between relative z-10">
-              <span className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <k.Icon size={18} aria-hidden="true" />
-              </span>
-              <FaArrowRight
-                size={12}
-                className="opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all mt-1"
-                aria-hidden="true"
-              />
-            </div>
-
-            <div className="relative z-10">
-              <strong className="block text-4xl font-black leading-none">{k.value}</strong>
-              <p className="text-sm font-semibold mt-1 opacity-90">{k.label}</p>
-              <p className="text-xs mt-0.5 opacity-70">{k.hint}</p>
-            </div>
-          </Link>
-        ))}
+        <div className="role-hero__stats" aria-label="Estado de la operación">
+          <div className="hero-stat">
+            <span className="hero-stat__label">Pendientes</span>
+            <strong className="hero-stat__value">{pendientes}</strong>
+            <span className="hero-stat__detail">Requieren revisión</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat__label">Aprobadas</span>
+            <strong className="hero-stat__value">{aprobados}</strong>
+            <span className="hero-stat__detail">Reservas confirmadas</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat__label">Losas</span>
+            <strong className="hero-stat__value">{totalLosas}</strong>
+            <span className="hero-stat__detail">Espacios registrados</span>
+          </div>
+        </div>
       </section>
 
-      {/* ── Grilla principal ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start">
+      <section className="metric-strip" aria-label="Resumen del sistema">
+        <Link to="/dashboard/usuarios" className="metric-item">
+          <span className="metric-item__top"><FaUserTie aria-hidden="true" /> Usuarios</span>
+          <strong className="metric-item__value">{totalUsuarios}</strong>
+          <span className="metric-item__detail">Cuentas registradas</span>
+        </Link>
+        <Link to="/dashboard/trabajadores" className="metric-item">
+          <span className="metric-item__top"><FaBriefcase aria-hidden="true" /> Trabajadores</span>
+          <strong className="metric-item__value">{totalTrabajadores}</strong>
+          <span className="metric-item__detail">Personal del sistema</span>
+        </Link>
+        <Link to="/dashboard/permisos" className="metric-item">
+          <span className="metric-item__top"><FaTimesCircle aria-hidden="true" /> Rechazadas</span>
+          <strong className="metric-item__value">{rechazados}</strong>
+          <span className="metric-item__detail">Solicitudes denegadas</span>
+        </Link>
+        <Link to="/dashboard/notificacion" className="metric-item">
+          <span className="metric-item__top"><FaBell aria-hidden="true" /> Actividad</span>
+          <strong className="metric-item__value">{ultimasNotifs.length}</strong>
+          <span className="metric-item__detail">Notificaciones recientes</span>
+        </Link>
+      </section>
 
-        {/* ── Tabla: últimas solicitudes pendientes ── */}
-        <section
-          className="rounded-2xl overflow-hidden"
-          style={{ background: "#fff", border: "1px solid var(--border-color)", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}
-          aria-label="Solicitudes pendientes recientes"
-        >
-          {/* Cabecera con gradiente suave */}
-          <div
-            className="flex items-center justify-between px-6 py-4"
-            style={{ background: "linear-gradient(90deg,#f0f7ff,#e8f0fe)", borderBottom: "1px solid var(--border-color)" }}
-          >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,.75fr)]">
+        <section className="content-panel" aria-labelledby="pending-title">
+          <div className="content-panel__header">
             <div>
-              <h2 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
-                🗂️ Solicitudes pendientes
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                Últimas {ultimosPendientes.length} sin resolver
-              </p>
+              <h2 id="pending-title">Solicitudes pendientes</h2>
+              <p>Las últimas solicitudes que aún necesitan una decisión.</p>
             </div>
-            <Link
-              to="/dashboard/permisos"
-              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-              style={{ background: "var(--color-primary-500)", color: "#fff" }}
-            >
-              Ver todas <FaArrowRight size={10} aria-hidden="true" />
+            <Link to="/dashboard/permisos" className="app-button app-button--secondary">
+              Ver todas <FaArrowRight aria-hidden="true" size={12} />
             </Link>
           </div>
 
           {ultimosPendientes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-              <span className="text-5xl">🎉</span>
-              <p className="font-bold" style={{ color: "var(--text-primary)" }}>¡Todo al día!</p>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>No hay solicitudes pendientes por revisar.</p>
+            <div className="content-panel__body py-12 text-center">
+              <FaCheckCircle className="mx-auto mb-3 text-4xl text-[var(--color-status-success)]" aria-hidden="true" />
+              <h3 className="text-xl font-semibold">Todo está revisado</h3>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">No hay solicitudes pendientes en este momento.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[680px] text-sm">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-color)", background: "var(--bg-surface)" }}>
-                    {["# ID", "Solicitante", "Tipo", "Fecha", "Estado", ""].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {h}
+                  <tr className="border-b border-[var(--border-color)] bg-[var(--bg-surface)]">
+                    {["Permiso", "Solicitante", "Tipo", "Fecha", "Estado", ""].map((heading) => (
+                      <th key={heading} className="px-5 py-3 text-left text-xs font-bold text-[var(--text-muted)]">
+                        {heading}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
-                  {ultimosPendientes.map((p) => {
-                    const est = estadoBadge[(p.estado as string)] ?? estadoBadge.Pendiente;
-                    return (
-                      <tr
-                        key={p.id_p as number}
-                        className="group transition-colors"
-                        style={{ borderBottom: "1px solid var(--border-color)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fbff")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "")}
-                      >
-                        <td className="px-5 py-3.5 font-mono text-xs" style={{ color: "var(--text-muted)" }}>
-                          #{String(p.id_p)}
-                        </td>
-                        <td className="px-5 py-3.5 font-semibold max-w-[150px] truncate" style={{ color: "var(--text-primary)" }}>
-                          {String(p.autor ?? "—")}
-                        </td>
-                        <td className="px-5 py-3.5" style={{ color: "var(--text-secondary)" }}>
-                          {String(p.tipo ?? "—")}
-                        </td>
-                        <td className="px-5 py-3.5 whitespace-nowrap" style={{ color: "var(--text-secondary)" }}>
-                          {fechaCorta(p.fecha_creacion as string)}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${est.cls}`}>
-                            {est.label}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <Link
-                            to="/dashboard/permisos"
-                            className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 text-xs font-bold transition-opacity"
-                            style={{ color: "var(--color-primary-600)" }}
-                          >
-                            Revisar <FaArrowRight size={9} aria-hidden="true" />
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody className="divide-y divide-[var(--border-color)]">
+                  {ultimosPendientes.map((permiso) => (
+                    <tr key={String(permiso.id_p)} className="hover:bg-[var(--bg-surface)]">
+                      <td className="px-5 py-4 font-display text-lg font-semibold">#{String(permiso.id_p)}</td>
+                      <td className="max-w-[180px] truncate px-5 py-4 font-semibold">{String(permiso.autor ?? "—")}</td>
+                      <td className="px-5 py-4 text-[var(--text-secondary)]">{String(permiso.tipo ?? "—")}</td>
+                      <td className="whitespace-nowrap px-5 py-4 text-[var(--text-secondary)]">{fechaCorta(String(permiso.fecha_creacion ?? ""))}</td>
+                      <td className="px-5 py-4">
+                        <span className="badge-warning">Pendiente</span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <Link to="/dashboard/permisos" className="font-bold text-[var(--color-primary-600)] underline-offset-4 hover:underline">
+                          Revisar
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
         </section>
 
-        {/* ── Feed: actividad reciente ── */}
-        <section
-          className="rounded-2xl overflow-hidden"
-          style={{ background: "#fff", border: "1px solid var(--border-color)", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}
-          aria-label="Actividad reciente"
-        >
-          <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ background: "linear-gradient(90deg,#fdf4ff,#fce7f3)", borderBottom: "1px solid var(--border-color)" }}
-          >
+        <section className="content-panel" aria-labelledby="activity-title">
+          <div className="content-panel__header">
             <div>
-              <h2 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>🔔 Actividad reciente</h2>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>Últimas notificaciones</p>
+              <h2 id="activity-title">Actividad reciente</h2>
+              <p>Últimos cambios registrados.</p>
             </div>
-            <Link
-              to="/dashboard/notificacion"
-              className="text-xs font-bold px-3 py-1.5 rounded-lg"
-              style={{ background: "#a855f7", color: "#fff" }}
-            >
-              Ver todo
-            </Link>
           </div>
-
           {ultimasNotifs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
-              <span className="text-4xl">🔕</span>
-              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Sin actividad reciente.</p>
-            </div>
+            <div className="content-panel__body text-sm text-[var(--text-secondary)]">No hay actividad reciente.</div>
           ) : (
-            <ul className="divide-y" style={{ borderColor: "var(--border-color)" }}>
-              {ultimasNotifs.map((n) => {
-                const tipo = (n.tipo as string) ?? "Pendiente";
-                const cfg  = notifCfg[tipo] ?? notifCfg.Pendiente;
-                const Icon = cfg.Icon;
+            <ul className="divide-y divide-[var(--border-color)]">
+              {ultimasNotifs.map((notification) => {
+                const status = String(notification.tipo ?? notification.estado ?? "Pendiente");
+                const config = notificationConfig[status] ?? notificationConfig.Pendiente;
+                const Icon = config.Icon;
+                const notificationKey = String(
+                  notification.id_n ??
+                  notification.id ??
+                  `${status}-${notification.mensaje ?? "actualizacion"}-${notification.fecha_envio ?? notification.created_at ?? "sin-fecha"}`
+                );
                 return (
-                  <li
-                    key={n.id_n as number}
-                    className="flex items-start gap-3 px-5 py-3.5 transition-colors"
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#fdf4ff")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "")}
-                  >
-                    <span className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
-                      <Icon size={14} className={cfg.cls} aria-hidden="true" />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold leading-snug line-clamp-2" style={{ color: "var(--text-primary)" }}>
-                        {String(n.mensaje ?? "Sin mensaje")}
+                  <li key={notificationKey} className="flex gap-3 px-5 py-4">
+                    <Icon className={`mt-0.5 shrink-0 ${config.className}`} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">{String(notification.mensaje ?? "Actualización del sistema")}</p>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                        {fechaCorta(String(notification.fecha_envio ?? notification.created_at ?? ""))}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {n.id_p != null && (
-                          <span className="text-[10px] font-bold" style={{ color: "var(--color-primary-600)" }}>
-                            Permiso #{String(n.id_p)}
-                          </span>
-                        )}
-                        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                          {fechaCorta(n.fecha_envio as string)}
-                        </span>
-                      </div>
                     </div>
                   </li>
                 );
               })}
             </ul>
           )}
+          <div className="border-t border-[var(--border-color)] p-4">
+            <Link to="/dashboard/notificacion" className="app-button app-button--secondary w-full">
+              Abrir notificaciones <FaArrowRight aria-hidden="true" size={12} />
+            </Link>
+          </div>
         </section>
       </div>
 
-      {/* ── Barra de recursos ── */}
-      <section aria-label="Resumen de recursos" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          {
-            label: "Losas deportivas",
-            value: totalLosas,
-            Icon:  FaThLarge,
-            desc:  "Espacios registrados",
-            gradient: "from-blue-500 to-cyan-400",
-            route: "/dashboard/losas",
-          },
-          {
-            label: "Usuarios",
-            value: totalUsuarios,
-            Icon:  FaUserTie,
-            desc:  "Cuentas en el sistema",
-            gradient: "from-violet-500 to-purple-400",
-            route: "/dashboard/usuarios",
-          },
-          {
-            label: "Trabajadores",
-            value: totalTrabajadores,
-            Icon:  FaBriefcase,
-            desc:  "Personal administrativo",
-            gradient: "from-emerald-500 to-teal-400",
-            route: "/dashboard/trabajadores",
-          },
-        ].map((item) => (
-          <Link
-            key={item.label}
-            to={item.route}
-            className={`group relative overflow-hidden flex items-center gap-4 p-5 rounded-2xl bg-gradient-to-r ${item.gradient} text-white shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200`}
-          >
-            {/* Blob decorativo */}
-            <span className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
-            <span className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 relative z-10">
-              <item.Icon size={20} aria-hidden="true" />
-            </span>
-            <div className="flex-1 min-w-0 relative z-10">
-              <p className="text-xs font-semibold opacity-80">{item.label}</p>
-              <strong className="block text-3xl font-black leading-tight">{item.value}</strong>
-              <span className="text-xs opacity-70">{item.desc}</span>
-            </div>
-            <FaArrowRight
-              size={13}
-              className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all relative z-10"
-              aria-hidden="true"
-            />
-          </Link>
-        ))}
+      <section className="section-heading">
+        <div>
+          <h2>Administración del sistema</h2>
+          <p>Accesos directos a los espacios y reservas.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/dashboard/losas" className="app-button app-button--secondary"><FaThLarge aria-hidden="true" /> Losas</Link>
+          <Link to="/dashboard/detalle-permisos" className="app-button app-button--primary"><FaCalendarCheck aria-hidden="true" /> Reservas</Link>
+        </div>
       </section>
-
     </div>
   );
 }
+

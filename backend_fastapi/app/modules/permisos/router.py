@@ -8,8 +8,12 @@ from starlette.datastructures import UploadFile
 from app.core.database import DBSession
 from app.core.exceptions import AppError
 from app.core.security import AuthenticatedUser, CurrentUser, require_roles
+from app.modules.jobs import service as jobs_service
+from app.modules.jobs.schemas import JobQueued
 from app.modules.permisos import service
 from app.modules.permisos.schemas import EstadoPermisoIn, PermisoIn, PermisoTrabajadorIn
+from app.queue.dispatch import enqueue
+from app.queue.tasks.permissions import automatic_review_task
 
 router = APIRouter(prefix="/permisos", tags=["Permisos"])
 Admin = Annotated[CurrentUser, Depends(require_roles("Administrador"))]
@@ -113,6 +117,16 @@ async def automatic_review(db: DBSession, admin: Admin) -> dict[str, Any]:
         "message": "Revisión automática completada",
         "data": await service.automatic_review(db, admin.id),
     }
+
+
+@router.post(
+    "/revision-automatica-async",
+    response_model=JobQueued,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def automatic_review_async(admin: Admin) -> JobQueued:
+    task_id = enqueue(automatic_review_task, admin.id, queue="documents")
+    return jobs_service.queued(task_id)
 
 
 @router.get("/bloqueados-detalle")

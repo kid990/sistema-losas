@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { api, responseHeadersWithCookies } from "~/services/api.server";
 import { requireRole } from "~/services/auth.server";
+import { queuedTaskId, waitForJob } from "~/services/jobs.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireRole(request, "trabajador", "Administrador");
@@ -44,9 +45,20 @@ export async function action({ request }: ActionFunctionArgs) {
     mes: url.searchParams.get("mes") || String(new Date().getMonth() + 1),
   });
   const path = `/reportes?${query.toString()}`;
-  const result = request.method === "DELETE"
-    ? await api.delete(path, request)
-    : await api.post(`/reportes/regenerar?${query.toString()}`, request);
+  let result: unknown;
+  if (request.method === "DELETE") {
+    result = await api.delete(path, request);
+  } else {
+    let queued: unknown;
+    try {
+      queued = await api.post(`/reportes/regenerar-async?${query.toString()}`, request);
+    } catch {
+      queued = null;
+    }
+    result = queued
+      ? await waitForJob(queuedTaskId(queued), request)
+      : await api.post(`/reportes/regenerar?${query.toString()}`, request);
+  }
   const headers = responseHeadersWithCookies(request);
   headers.set("Content-Type", "application/json");
 

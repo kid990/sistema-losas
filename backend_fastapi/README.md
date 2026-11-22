@@ -52,7 +52,14 @@ operación se cancela sin modificar la cuenta existente.
 python -m pytest
 python -m ruff check app tests
 python -m mypy app
+python scripts/check_database.py
 ```
+
+Estado verificado de autenticación contra la base de datos activa:
+- ✅ **Usuario Alumno (`20241001` / `12345678`):**  
+  EXITOSO — Sesión iniciada con rol Alumno.
+- ✅ **Administrador (`admin.prueba@example.com` / `12345678`):**  
+  EXITOSO — Sesión iniciada con rol Administrador.
 
 Para comprobar la conexión real con S3/Backblaze B2, incluyendo subida, URL firmada y limpieza del
 archivo temporal:

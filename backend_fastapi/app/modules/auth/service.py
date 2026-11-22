@@ -13,10 +13,10 @@ from app.core.security import (
     hash_token,
     verify_password,
 )
-from app.integrations.email import send_email
 from app.integrations.unheval import get_usuario
 from app.models import PasswordResetToken, Trabajador, User, UserSession
 from app.modules.auth.schemas import LoginResult, PublicUser
+from app.queue.dispatch import dispatch_email
 
 
 def _utc_naive() -> datetime:
@@ -267,7 +267,7 @@ async def forgot_password(db: AsyncSession, identifier: str) -> None:
     )
     await db.commit()
     link = f"{settings.frontend_url}/reset-password?token={raw_token}"
-    await send_email(
+    await dispatch_email(
         email,
         "Recuperación de contraseña - Sistema UNHEVAL",
         f"Hola {name},\n\nRestablece tu contraseña aquí: {link}\n\nExpira en 60 minutos.",

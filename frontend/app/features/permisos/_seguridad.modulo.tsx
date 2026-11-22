@@ -57,6 +57,14 @@ export default function SeguridadModulo() {
   });
 
   const list = (permisos as Record<string, unknown>[]) || [];
+  const permisosEspeciales = list.filter((permiso) => permiso.tipo === "Especial").length;
+  const permisosRegulares = list.length - permisosEspeciales;
+  const fechaLima = new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
 
   const filtrados = useMemo(() => {
     if (!busqueda.trim()) return list;
@@ -165,19 +173,44 @@ export default function SeguridadModulo() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="space-y-7">
+      <section className="role-hero" aria-labelledby="security-title">
+        <div className="role-hero__copy">
+          <p className="role-hero__eyebrow">Verificación en garita · {fechaLima}</p>
+          <h1 id="security-title">Control de acceso</h1>
+          <p className="role-hero__description">
+            Busca un permiso autorizado y comprueba la losa, la disciplina y el horario antes de permitir el ingreso.
+          </p>
+        </div>
+        <div className="role-hero__stats" aria-label="Resumen de permisos aprobados">
+          <div className="hero-stat">
+            <span className="hero-stat__label">Autorizados</span>
+            <strong className="hero-stat__value">{list.length}</strong>
+            <span className="hero-stat__detail">Permisos disponibles</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat__label">Regulares</span>
+            <strong className="hero-stat__value">{permisosRegulares}</strong>
+            <span className="hero-stat__detail">Sin documento especial</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat__label">Especiales</span>
+            <strong className="hero-stat__value">{permisosEspeciales}</strong>
+            <span className="hero-stat__detail">Con autorización adjunta</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="section-heading">
         <div>
-          <h1 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
-            <FaShieldAlt className="text-[#003366]" /> Control de Acceso y Permisos Aprobados
-          </h1>
+          <h2 className="flex items-center gap-2"><FaShieldAlt className="text-[var(--color-primary-600)]" /> Permisos aprobados</h2>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Verificación en garita de permisos vigentes para ingreso a las losas deportivas de la UNHEVAL.
+            Filtra por persona, fecha, losa, disciplina o código del permiso.
           </p>
         </div>
       </div>
 
-      <div className="card-theme p-6">
+      <div className="content-panel p-5 sm:p-6">
         <div className="mb-4 max-w-md">
           <Input
             placeholder="Buscar por ID, fecha, horario, losa o disciplina..."

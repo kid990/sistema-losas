@@ -68,7 +68,7 @@ export default function AdminLayout() {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="admin-shell min-h-screen">
+    <div className="admin-shell app-shell app-shell--admin min-h-screen">
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
@@ -104,7 +104,7 @@ export default function AdminLayout() {
       {/* Main content */}
       <main
         inert={sidebarOpen && !isDesktop}
-        className={`min-h-screen min-w-0 flex flex-col ${desktopCollapsed ? "lg:ml-0" : "lg:ml-[260px]"}`}
+        className={`min-h-screen min-w-0 flex flex-col ${desktopCollapsed ? "lg:ml-0" : "lg:ml-[272px]"}`}
       >
         {/* Mini topbar solo para mobile — botón abrir sidebar */}
         <div className="admin-mobile-topbar lg:hidden">
@@ -121,7 +121,7 @@ export default function AdminLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-[var(--text-primary)]">SIRLOD</span>
+          <span className="mobile-brand">Panel de Bienestar</span>
         </div>
 
         <div className="admin-content flex-1">

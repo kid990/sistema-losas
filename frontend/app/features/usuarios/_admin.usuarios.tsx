@@ -4,6 +4,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
+import { queuedTaskId, waitForJob } from "~/services/jobs.server";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
 import { Button, Modal, Select, Badge, Input } from "~/shared/components/ui";
 import { FaPencilAlt, FaSyncAlt, FaSearch } from "react-icons/fa";
@@ -23,7 +24,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent") as string;
 
   if (intent === "loadAll") {
-    await api.post("/users/cargar", request);
+    let queued: unknown;
+    try {
+      queued = await api.post("/users/cargar-async", request);
+    } catch {
+      queued = null;
+    }
+    if (queued) await waitForJob(queuedTaskId(queued), request);
+    else await api.post("/users/cargar", request);
   }
 
   if (intent === "changeState") {
