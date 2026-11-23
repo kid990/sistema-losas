@@ -1,9 +1,10 @@
 import asyncio
-from collections import defaultdict
+import os
 from typing import Any
 
 import httpx
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError
@@ -11,12 +12,38 @@ from app.core.security import hash_password, verify_password
 from app.integrations.unheval import get_usuario, list_usuarios
 from app.models import User
 
+_ROLES = ("Alumno", "Docente", "PersonalAdministrativo")
+_HASH_CONCURRENCY = max(4, min(16, os.cpu_count() or 4))
+_INSERT_BATCH_SIZE = 1000
+_MAX_ERROR_DETAILS = 100
+
+
+def _normalize_role(value: Any) -> str:
+    key = str(value or "").strip().lower()
+    if key == "docente":
+        return "Docente"
+    if key in {"personaladministrativo", "personal administrativo", "administrativo"}:
+        return "PersonalAdministrativo"
+    return "Alumno"
+
+
+def _empty_role_report() -> dict[str, Any]:
+    return {"procesados": 0, "creados": 0, "existentes": 0, "errores": 0, "detalles": []}
+
+
+async def _hash_passwords(passwords: list[str]) -> list[str]:
+    """Calcula bcrypt en paralelo; cada hash corre fuera del event loop."""
+    semaphore = asyncio.Semaphore(_HASH_CONCURRENCY)
+
+    async def hash_one(password: str) -> str:
+        async with semaphore:
+            return await hash_password(password)
+
+    return list(await asyncio.gather(*(hash_one(password) for password in passwords)))
+
 
 async def load_users(db: AsyncSession) -> dict[str, Any]:
     records = await list_usuarios()
-    by_role: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for record in records:
-        by_role[str(record.get("rol") or "Alumno")].append(record)
     report: dict[str, Any] = {
         "totalProcesados": 0,
         "totalCreados": 0,
@@ -25,36 +52,66 @@ async def load_users(db: AsyncSession) -> dict[str, Any]:
         "roles": {},
         "erroresDetalles": [],
     }
-    for role, grouped in by_role.items():
-        if role not in {"Alumno", "Docente", "PersonalAdministrativo"}:
-            role = "Alumno"
-        role_report: dict[str, Any] = {
-            "procesados": len(grouped),
-            "creados": 0,
-            "existentes": 0,
-            "errores": 0,
-            "detalles": [],
-        }
-        for record in grouped:
-            codigo, dni = record.get("codigo"), record.get("dni")
-            report["totalProcesados"] += 1
-            if not codigo or not dni:
-                report["totalErrores"] += 1
-                role_report["errores"] += 1
-                role_report["detalles"].append({"codigo": codigo, "error": "Campos faltantes"})
-                continue
-            if await db.scalar(select(User.id_u).where(User.codigo == str(codigo))):
-                report["totalExistentes"] += 1
-                role_report["existentes"] += 1
-                continue
-            db.add(
-                User(codigo=str(codigo), password=await hash_password(str(codigo)), rol=role, estado="Activo")
+    roles = {role: _empty_role_report() for role in _ROLES}
+    candidates: dict[str, dict[str, str]] = {}
+
+    for record in records:
+        report["totalProcesados"] += 1
+        role = _normalize_role(record.get("rol"))
+        role_report = roles[role]
+        role_report["procesados"] += 1
+        codigo = str(record.get("codigo") or "").strip()
+        dni = record.get("dni")
+        if not codigo or not dni:
+            report["totalErrores"] += 1
+            role_report["errores"] += 1
+            if len(role_report["detalles"]) < _MAX_ERROR_DETAILS:
+                role_report["detalles"].append({"codigo": codigo or None, "error": "Campos faltantes"})
+            continue
+        if codigo in candidates:
+            report["totalExistentes"] += 1
+            role_report["existentes"] += 1
+            continue
+        candidates[codigo] = {"codigo": codigo, "rol": role}
+
+    existing = set((await db.scalars(select(User.codigo))).all())
+    pending = [item for code, item in candidates.items() if code not in existing]
+    report["totalExistentes"] += len(candidates) - len(pending)
+    for item in candidates.values():
+        if item["codigo"] in existing:
+            roles[item["rol"]]["existentes"] += 1
+
+    if pending:
+        hashes = await _hash_passwords([item["codigo"] for item in pending])
+        rows = [
+            {
+                "codigo": item["codigo"],
+                "password": hashed,
+                "rol": item["rol"],
+                "estado": "Activo",
+            }
+            for item, hashed in zip(pending, hashes, strict=True)
+        ]
+        for start in range(0, len(rows), _INSERT_BATCH_SIZE):
+            batch = rows[start : start + _INSERT_BATCH_SIZE]
+            result = await db.execute(
+                insert(User)
+                .values(batch)
+                .on_conflict_do_nothing(index_elements=["codigo"])
+                .returning(User.codigo)
             )
-            report["totalCreados"] += 1
-            role_report["creados"] += 1
+            created = set(result.scalars().all())
+            report["totalCreados"] += len(created)
+            for item in batch:
+                if item["codigo"] in created:
+                    roles[item["rol"]]["creados"] += 1
         await db.commit()
-        report["roles"][role] = role_report
-        await asyncio.sleep(0)
+
+    for role in _ROLES:
+        report["roles"][role] = roles[role]
+    report["erroresDetalles"] = [
+        detail for role in _ROLES for detail in roles[role]["detalles"]
+    ]
     return report
 
 

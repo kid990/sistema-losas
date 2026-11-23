@@ -231,6 +231,23 @@ pnpm dev
 
 Abre `http://localhost:5173`.
 
+## Ejecutar con Docker
+
+Alternativa recomendada: levanta bases de datos, APIs, colas y frontend con Docker.
+
+```bash
+cp docker/.env.example docker/.env
+cp backend_fastapi/.env.docker.example backend_fastapi/.env.docker
+cp backend_api/.env.docker.example backend_api/.env.docker
+cp frontend/.env.docker.example frontend/.env.docker
+
+docker compose --env-file docker/.env -f docker/compose.yml up --build -d
+```
+
+Abre `http://localhost:5173` (Swagger en `http://localhost:3000/docs`).
+
+La guía completa —perfiles de Celery y Flower, PostgreSQL local, overlay de producción con Nginx y variables de entorno— está en [`docker/README.md`](docker/README.md).
+
 ## Comandos de desarrollo
 
 ### FastAPI
