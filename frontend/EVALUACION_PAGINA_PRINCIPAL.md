@@ -9,6 +9,11 @@
 | Implementación | `app/features/losas/_public._index.tsx` |
 | Guía aplicada | `GUIA_UI_UX.md` |
 | Tipo de evaluación | Revisión estática de código, compilación y detector visual |
+| Última validación técnica | 2026-11-23 |
+| Revisión de código | `9253f63` |
+
+Los resultados corresponden a esa revisión. Después de cambios funcionales o visuales debe repetirse la
+lista de comprobación y registrarse una nueva fecha.
 
 ## Veredicto
 
@@ -162,11 +167,11 @@ La página principal no contiene formularios, mensajes de validación, radio but
 
 | Verificación | Resultado |
 |---|---|
-| `pnpm typecheck` | Correcto |
-| `pnpm build` | Correcto |
+| `pnpm typecheck` | Correcto (revalidado el 2026-11-23) |
+| `pnpm build` | Correcto (revalidado el 2026-11-23) |
 | Detector visual de Impeccable | Sin hallazgos automáticos |
 | Ruta única a `/login` en la página | Correcto |
-| Captura compacta en Edge headless | Correcto |
+| Captura compacta en Edge headless | Correcto; evidencia no versionada |
 
 El proceso muestra advertencias por la opción obsoleta `envFile`, pero no afectan esta evaluación ni impiden la compilación.
 

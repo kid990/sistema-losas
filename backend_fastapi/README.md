@@ -19,8 +19,11 @@ La decisión completa está en `docs/adr/0001-monolito-modular-fastapi.md`.
 ## Instalación en Windows
 
 ```powershell
-Copy-Item .env.example .env
+python -m venv .venv
 .venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+Copy-Item .env.example .env
 python -m uvicorn app.main:app --host 127.0.0.1 --port 3000 --reload
 ```
 
@@ -55,11 +58,8 @@ python -m mypy app
 python scripts/check_database.py
 ```
 
-Estado verificado de autenticación contra la base de datos activa:
-- ✅ **Usuario Alumno (`20241001` / `12345678`):**  
-  EXITOSO — Sesión iniciada con rol Alumno.
-- ✅ **Administrador (`admin.prueba@example.com` / `12345678`):**  
-  EXITOSO — Sesión iniciada con rol Administrador.
+Las cuentas de demostración se crean solo mediante las semillas locales. Consulta
+[`../DB/credenciales_demo.md`](../DB/credenciales_demo.md); no uses esas credenciales en producción.
 
 Para comprobar la conexión real con S3/Backblaze B2, incluyendo subida, URL firmada y limpieza del
 archivo temporal:
@@ -79,3 +79,6 @@ Antes de usar reportes en una base existente, crea la tabla de metadatos:
 Cada reporte mensual o anual se genera una sola vez, se guarda bajo el prefijo S3 configurado en
 `S3_REPORT_KEY_PREFIX` (por defecto `reportes`) y se registra en `reportes_generados`. Las siguientes
 consultas del mismo periodo descargan el PDF existente desde S3 sin volver a invocar la IA.
+
+Para habilitar la predicción de ocupación, aplica además
+`../PG/migrations/20261123_prediccion_ocupacion.sql` siguiendo [`../ml/README.md`](../ml/README.md).

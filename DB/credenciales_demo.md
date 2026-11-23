@@ -1,6 +1,11 @@
-# 🔑 Credenciales Iniciales de Prueba — Sistema LOSA UNHEVAL
+# 🔑 Credenciales locales de demostración — Sistema LOSA UNHEVAL
 
-Las siguientes credenciales están configuradas en los scripts de semillas iniciales ([PG/seed_usuarios_prueba.sql](PG/seed_usuarios_prueba.sql)) y cargadas en la base de datos activa (Supabase):
+> [!WARNING]
+> Estas cuentas son exclusivamente para desarrollo local. No deben crearse ni habilitarse en producción.
+
+Las siguientes credenciales están configuradas en el script de semillas
+[`PG/seed_usuarios_prueba.sql`](../PG/seed_usuarios_prueba.sql) y se cargan únicamente cuando el
+desarrollador ejecuta esas semillas en su base local:
 
 ---
 
@@ -29,4 +34,5 @@ Las siguientes credenciales están configuradas en los scripts de semillas inici
 ---
 
 > [!NOTE]
-> Todos los permisos (`permisos`), detalles de permisos (`detalle_permisos`), notificaciones e imágenes han sido **limpiados a 0** para que puedas registrar reservaciones y subir archivos reales a S3/B2 desde el sistema.
+> En la base local preparada por las semillas, los permisos (`permisos`), detalles
+> (`detalle_permisos`), notificaciones e imágenes comienzan vacíos para facilitar las pruebas.

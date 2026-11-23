@@ -2,6 +2,9 @@
 
 <!-- impeccable:design-schema 1 -->
 
+Documento canónico del sistema visual. Su implementación vive en `frontend/app`; no se mantiene una
+copia adicional dentro de `frontend/` para evitar divergencias.
+
 ## Dirección
 
 **Nombre:** Agenda Deportiva Institucional  

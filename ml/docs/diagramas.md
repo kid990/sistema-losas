@@ -3,8 +3,12 @@
 Dos diagramas cubren el ciclo completo: entrenamiento offline y consumo desde
 la vista del alumno o docente.
 
-Los diagramas están en Mermaid; GitHub, GitLab y VS Code los renderizan sin
-instalar nada.
+Los diagramas están en Mermaid. GitHub y GitLab los renderizan directamente;
+VS Code necesita una extensión compatible con Mermaid.
+
+Las cantidades mostradas corresponden al dataset descrito en `../README.md`,
+con datos hasta el 2026-11-20. Si se reentrena con otra ventana, deben
+actualizarse junto con las métricas del modelo.
 
 ---
 

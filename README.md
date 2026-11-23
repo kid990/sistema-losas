@@ -24,6 +24,25 @@ Navegador -> React Router (5173) -> FastAPI (3000) -> PostgreSQL (losa)
 
 El antiguo backend Express del sistema principal ya no se utiliza. `backend_api` sí debe conservarse porque proporciona el padrón académico.
 
+## Documentación
+
+Cada documento tiene un propósito único:
+
+| Necesidad | Documento |
+|---|---|
+| Instalar y ejecutar todo el sistema | Este `README.md` |
+| Configurar la API principal | [`backend_fastapi/README.md`](backend_fastapi/README.md) |
+| Entender la decisión de arquitectura | [`backend_fastapi/docs/adr/0001-monolito-modular-fastapi.md`](backend_fastapi/docs/adr/0001-monolito-modular-fastapi.md) |
+| Ejecutar con Docker | [`docker/README.md`](docker/README.md) |
+| Desarrollar el frontend | [`frontend/README.md`](frontend/README.md) |
+| Evaluar la interfaz | [`frontend/GUIA_UI_UX.md`](frontend/GUIA_UI_UX.md) |
+| Consultar la evaluación de la página principal | [`frontend/EVALUACION_PAGINA_PRINCIPAL.md`](frontend/EVALUACION_PAGINA_PRINCIPAL.md) |
+| Entrenar y servir el modelo RF-04 | [`ml/README.md`](ml/README.md) |
+| Consultar los diagramas del modelo | [`ml/docs/diagramas.md`](ml/docs/diagramas.md) |
+| Entender el producto | [`PRODUCT.md`](PRODUCT.md) |
+| Consultar el sistema visual | [`DESIGN.md`](DESIGN.md) |
+| Usar credenciales locales de demostración | [`DB/credenciales_demo.md`](DB/credenciales_demo.md) |
+
 ## Requisitos
 
 - Git.
@@ -64,6 +83,7 @@ psql -U postgres -d losa -f .\PG\sistema_losa_schema.sql
 psql -U postgres -d losa -f .\PG\migrations\001_integridad_permisos.sql
 psql -U postgres -d losa -f .\PG\migrations\20260929_permissions_audit.sql
 psql -U postgres -d losa -f .\PG\migrations\20260930_reportes_s3.sql
+psql -U postgres -d losa -f .\PG\migrations\20261123_prediccion_ocupacion.sql
 ```
 
 Alternativa con pgAdmin:
@@ -129,11 +149,15 @@ CORS_ORIGINS=["http://localhost:5173"]
 UNHEVAL_API_URL=http://localhost:3001/api
 
 AI_PROVIDER=deepseek
-DOCUMENT_AI_PROVIDER=gemini
+DOCUMENT_AI_PROVIDER=openai
 
 DEEPSEEK_API_KEY=TU_CLAVE_DEEPSEEK
 DEEPSEEK_MODEL=deepseek-flash
 DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+OPENAI_API_KEY=TU_CLAVE_OPENAI
+OPENAI_MODEL=gpt-4o-mini
+DOCUMENT_AI_MODEL=gpt-4o-mini
 
 GEMINI_API_KEY=TU_CLAVE_GEMINI
 GEMINI_MODEL=gemini-3.8-flash
@@ -141,8 +165,9 @@ GEMINI_MODEL=gemini-3.8-flash
 S3_REPORT_KEY_PREFIX=reportes
 ```
 
-`AI_PROVIDER` selecciona la IA de LosaBot: admite `deepseek` o `gemini`. La revisión de PDFs usa
-siempre `DOCUMENT_AI_PROVIDER=gemini`, porque necesita analizar visualmente el documento y la firma.
+`AI_PROVIDER` selecciona la IA de LosaBot: admite `deepseek`, `gemini` u `openai`. La revisión visual
+de PDFs admite `DOCUMENT_AI_PROVIDER=openai` (valor predeterminado) o `gemini`; configura únicamente
+las credenciales del proveedor elegido.
 
 No subas `.env` a Git. El repositorio solo debe contener `.env.example` sin secretos.
 
@@ -194,6 +219,7 @@ Contenido mínimo de `frontend/.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api
+API_INTERNAL_BASE_URL=http://localhost:3000/api
 ```
 
 ## Cómo ejecutar el sistema
@@ -296,26 +322,12 @@ cd backend_fastapi
 
 El verificador compara las tablas y columnas existentes con los modelos SQLAlchemy. Termina con código 1 si falta alguna tabla o columna.
 
-Estado verificado en Supabase:
+El resultado correcto es una confirmación de que las tablas y columnas coinciden con los modelos. Las
+cantidades de registros dependen de cada entorno y no forman parte del criterio de éxito.
 
-```text
-Esquema completo: 14 tablas de aplicación verificadas
-- configuracion_global: 1 registro
-- disciplinas: 5 registros
-- losas: 5 registros
-- users: 4 registros
-- trabajadores: 2 registros
-- reportes_generados: 0 registros
-```
-
-### Pruebas de Inicio de Sesión (Login Verificado)
-
-- ✅ **Usuario Alumno (`20241001` / `12345678`):**  
-  EXITOSO — Sesión iniciada con rol Alumno.
-- ✅ **Administrador (`admin.prueba@example.com` / `12345678`):**  
-  EXITOSO — Sesión iniciada con rol Administrador.
-
-Por tanto, la base PostgreSQL activa está completa respecto a los modelos actuales. El script también permite volver a comprobarla después de clonar, migrar o desplegar.
+Para probar el inicio de sesión en desarrollo local, consulta
+[`DB/credenciales_demo.md`](DB/credenciales_demo.md). Esas cuentas pertenecen únicamente a las semillas
+locales y no deben habilitarse en producción.
 
 Para hacer una copia de seguridad antes de cambios importantes:
 
@@ -375,44 +387,6 @@ SISTEMA_LOSA/
 ├── DB/                    # Esquema y datos del padrón MySQL
 └── README.md
 ```
-
-## Cómo subir las eliminaciones a GitHub
-
-Cuando borras archivos localmente, GitHub no cambia hasta que registres y envíes esas eliminaciones con Git.
-
-Desde la raíz del proyecto:
-
-```powershell
-git status --short
-git branch --show-current
-git add -A
-git diff --cached --stat
-git status --short
-git commit -m "Migra backend a FastAPI y elimina código obsoleto"
-git push origin main
-```
-
-`git add -A` es importante porque agrega archivos nuevos, modificaciones y eliminaciones. Si tu rama no se llama `main`, reemplázala por el resultado de:
-
-```powershell
-git branch --show-current
-```
-
-Ejemplo:
-
-```powershell
-$branch = git branch --show-current
-git push origin $branch
-```
-
-Antes del commit revisa exactamente lo que se eliminará:
-
-```powershell
-git diff --cached --name-status
-git diff --cached --diff-filter=D --name-only
-```
-
-Después del `push`, los archivos eliminados desaparecerán de la rama correspondiente en GitHub, pero seguirán recuperables desde el historial de Git.
 
 ## Actualizar una instalación existente
 

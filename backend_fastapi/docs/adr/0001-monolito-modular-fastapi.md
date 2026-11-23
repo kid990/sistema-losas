@@ -4,6 +4,13 @@
 
 Aceptado.
 
+- **Fecha de decisión:** 2026-09-14.
+- **Última revisión:** 2026-11-23.
+
+La decisión de mantener un monolito modular continúa vigente. Desde la decisión original se añadió
+Celery con Redis para trabajos de reportes, documentos, correos y sincronización; esta evolución no
+cambia los límites de dominio ni la unidad de despliegue de la API.
+
 ## Contexto
 
 El backend original es una aplicación Express desplegada como una sola unidad. Está dividido por dominios;
@@ -30,7 +37,8 @@ centralizan en `app/integrations` y la seguridad/configuración en `app/core`.
 
 - Los módulos se despliegan y escalan juntos.
 - La aplicación sigue dependiendo de la API UNHEVAL para enriquecer datos de usuarios.
-- Los trabajos de correo en segundo plano son locales; para alta disponibilidad futura conviene una cola.
+- En la versión original, los trabajos de correo en segundo plano eran locales. Actualmente pueden
+  delegarse a Celery; la disponibilidad de la cola sigue dependiendo de Redis y del worker.
 
 ### Riesgos y mitigaciones
 

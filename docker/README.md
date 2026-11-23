@@ -108,7 +108,7 @@ frontend, APIs, bases de datos, Redis y Flower; únicamente Nginx queda expuesto
 Antes de desplegar en un servidor cambia `PUBLIC_URL`, `NGINX_HTTP_PORT`, las
 contraseñas de infraestructura y las claves de los `.env.docker`. El frontend
 se compila con `/api` como URL pública y Nginx dirige esa ruta hacia FastAPI.
-El backend Express continúa accesible únicamente desde la red interna.
+La API Express del padrón UNHEVAL (`backend-api`) continúa accesible únicamente desde la red interna.
 
 Esta configuración recibe HTTP en Nginx. En producción, HTTPS debe terminar en
 el balanceador o plataforma de alojamiento. Si Nginx se expone directamente a

@@ -2,6 +2,8 @@
 
 <!-- impeccable:product-schema 1 -->
 
+Documento canónico del alcance y los principios del producto para todo el repositorio.
+
 ## Platform
 
 web
@@ -23,10 +25,11 @@ Sistema web institucional centralizado con integración al padrón UNHEVAL y con
 - Sistema de reservas por bloques de hora según horario de apertura y días bloqueados (mantenimiento/feriados).
 
 ## Capabilities and Constraints
-- **Tipos de Permiso:** Permisos Normales (aprobación instantánea) y Permisos Especiales (adjunto de PDF/imagen y revisión manual por administrador).
+- **Tipos de Permiso:** Permisos Normales (aprobación instantánea) y Permisos Especiales (adjunto de PDF/imagen, revisión automática asistida y decisión administrativa).
 - **Gestión de Infraestructura:** Registro y control de estado de losas deportivas y disciplinas asociadas.
 - **Seguridad e Identidad:** Autenticación JWT dual-token (Access Token 15m + Refresh Token 7d en cookies HttpOnly), validación de estudiantes/docentes vía API UNHEVAL y consulta DNI vía RENIEC.
 - **Notificaciones:** Sistema interno de alertas sobre estados de permisos y comunicaciones.
+- **Operación:** Reportes PDF, trabajos asíncronos con Celery y predicción diaria de ocupación RF-04.
 
 ## Brand Commitments
 - Identidad gráfica oficial de la Universidad Nacional Hermilio Valdizán (colores institucionales azul/marino y acentos dorados/azules, logotipo UNHEVAL).
@@ -34,8 +37,11 @@ Sistema web institucional centralizado con integración al padrón UNHEVAL y con
 
 ## Evidence on Hand
 - Código fuente frontend en React Router 8 + Tailwind CSS 4 (`frontend/app`).
-- Backend modular en Express 5 (`backend/src/modules`).
-- Base de datos MySQL configurada con esquemas y seeds de prueba (`DB/`).
+- Backend principal modular en FastAPI + SQLAlchemy asíncrono (`backend_fastapi/app`).
+- Base principal PostgreSQL con esquema y migraciones versionadas (`PG/`).
+- API independiente del padrón UNHEVAL en Express + MySQL (`backend_api/` y `DB/`).
+- Entrenamiento y predicción RF-04 con scikit-learn (`ml/`).
+- Infraestructura reproducible con Docker Compose, Redis, Celery y Nginx (`docker/`).
 
 ## Product Principles
 1. **Agilidad en la Reserva:** Flujo directo para seleccionar losa, fecha y horario en pocos toques.

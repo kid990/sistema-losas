@@ -88,6 +88,10 @@ Train hasta 2025 · test 2026.
 
 Validación expansiva: 0.8308 ± 0.0080.
 
+Estas cifras corresponden al dataset sintético cerrado el 2026-11-20. El archivo JSON generado junto a
+cada modelo es la fuente de verdad para su `modelo_version`, ventana y métricas; tras un reentrenamiento,
+actualiza esta sección y `docs/diagramas.md`.
+
 ## Predicciones
 
 ```powershell
