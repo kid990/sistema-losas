@@ -8,6 +8,8 @@ x-fastapi-service: &fastapi-service
   image: sirlod-fastapi:local
   env_file:
     - ../backend_fastapi/.env.docker
+  environment:
+    TZ: ${TZ:-America/Lima}
   restart: unless-stopped
   init: true
   security_opt:
@@ -104,6 +106,8 @@ services:
     init: true
     env_file:
       - ../backend_api/.env.docker
+    environment:
+      TZ: ${TZ:-America/Lima}
     ports:
       - "127.0.0.1:${BACKEND_API_PORT:-3001}:3001"
     depends_on:
@@ -191,6 +195,7 @@ services:
       - flower
       - --port=5555
     environment:
+      TZ: ${TZ:-America/Lima}
       FLOWER_BASIC_AUTH: ${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-flower_dev_change_me}
     ports:
       - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
@@ -207,6 +212,8 @@ services:
     init: true
     env_file:
       - ../frontend/.env.docker
+    environment:
+      TZ: ${TZ:-America/Lima}
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     depends_on:

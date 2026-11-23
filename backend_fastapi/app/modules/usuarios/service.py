@@ -3,7 +3,7 @@ import os
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -115,6 +115,19 @@ async def load_users(db: AsyncSession) -> dict[str, Any]:
     return report
 
 
+async def counts(db: AsyncSession) -> dict[str, int]:
+    rows = (
+        await db.execute(select(User.rol, func.count(User.id_u)).group_by(User.rol))
+    ).all()
+    by_role = {str(rol): int(total) for rol, total in rows}
+    return {
+        "total": sum(by_role.values()),
+        "alumnos": by_role.get("Alumno", 0),
+        "docentes": by_role.get("Docente", 0),
+        "personal_administrativo": by_role.get("PersonalAdministrativo", 0),
+    }
+
+
 async def set_status(db: AsyncSession, codigo: str, estado: str) -> dict[str, str]:
     user = await db.scalar(select(User).where(User.codigo == codigo))
     if user is None:
@@ -125,7 +138,11 @@ async def set_status(db: AsyncSession, codigo: str, estado: str) -> dict[str, st
 
 
 async def list_all(db: AsyncSession) -> list[dict[str, Any]]:
-    users = (await db.scalars(select(User).order_by(User.id_u))).all()
+    users = (
+        await db.execute(
+            select(User.id_u, User.codigo, User.rol, User.estado).order_by(User.id_u)
+        )
+    ).all()
     if not users:
         return []
 

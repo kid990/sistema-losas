@@ -830,6 +830,29 @@ body {
 .theme-toggle:hover { color: var(--ui-primary); border-color: var(--ui-primary); }
 .theme-toggle--wide { width: 100%; justify-content: flex-start; padding-inline: 12px; }
 
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ui-line);
+  border-radius: 999px;
+  background: var(--ui-surface);
+}
+.theme-switch button {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: var(--ui-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+.theme-switch button:hover { color: var(--ui-primary); }
+.theme-switch button.is-active { background: var(--ui-primary); color: #fff; }
+
 .app-button {
   display: inline-flex;
   min-height: 44px;

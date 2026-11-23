@@ -37,6 +37,11 @@ async def list_all(db: DBSession) -> dict[str, Any]:
     return {"success": True, "data": await service.list_all(db)}
 
 
+@router.get("/resumen")
+async def summary(db: DBSession, _admin: Admin) -> dict[str, Any]:
+    return {"success": True, "data": await service.counts(db)}
+
+
 @router.get("/{user_id}")
 async def get_one(user_id: int, db: DBSession) -> dict[str, Any]:
     return {"success": True, "data": await service.get_one(db, user_id)}

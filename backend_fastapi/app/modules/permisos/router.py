@@ -106,8 +106,22 @@ async def create(request: Request, db: DBSession, user: AuthenticatedUser) -> di
 
 
 @router.get("/")
-async def list_all(db: DBSession, _admin: Admin, estado: str | None = Query(default=None)) -> dict[str, Any]:
-    return {"success": True, "data": await service.list_permissions(db, estado)}
+async def list_all(
+    db: DBSession,
+    _admin: Admin,
+    estado: str | None = Query(default=None),
+    limit: int = Query(default=1000, ge=1, le=5000),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    return {
+        "success": True,
+        "data": await service.list_permissions(db, estado, limit=limit, offset=offset),
+    }
+
+
+@router.get("/resumen")
+async def summary(db: DBSession, _admin: Admin) -> dict[str, Any]:
+    return {"success": True, "data": await service.summary_counts(db)}
 
 
 @router.post("/revision-automatica")

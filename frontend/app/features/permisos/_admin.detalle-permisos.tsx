@@ -25,13 +25,15 @@ export default function AdminDetallePermisos() {
     if (!busqueda.trim()) return list;
     const q = busqueda.toLowerCase();
     return list.filter((row) => {
-      const texto = `${row.id_l} ${row.fecha} ${row.hora_inicio} ${row.hora_fin} ${row.estado} ${row.nombre} ${row.id_p}`.toLowerCase();
+      const texto = `${row.codigo} ${row.dni} ${row.nombre_completo} ${row.id_l} ${row.fecha} ${row.hora_inicio} ${row.hora_fin} ${row.estado} ${row.nombre}`.toLowerCase();
       return texto.includes(q);
     });
   }, [list, busqueda]);
 
   const columns = [
-    { name: "ID Permiso", selector: (r: Record<string, unknown>) => `#${r.id_p}`, width: "110px", sortable: true },
+    { name: "Código", selector: (r: Record<string, unknown>) => (r.codigo as string) || "-", width: "120px", sortable: true },
+    { name: "DNI", selector: (r: Record<string, unknown>) => (r.dni as string) || "-", width: "100px", sortable: true },
+    { name: "Nombre completo", selector: (r: Record<string, unknown>) => (r.nombre_completo as string) || "-", sortable: true },
     { name: "Losa Deportiva", selector: (r: Record<string, unknown>) => `Campo #${r.id_l}`, width: "130px", sortable: true },
     { name: "Disciplina", selector: (r: Record<string, unknown>) => (r.nombre as string) || (r.disciplina as string) || "General", sortable: true },
     { name: "Fecha de Uso", selector: (r: Record<string, unknown>) => formatFecha(r.fecha as string), sortable: true },
@@ -67,7 +69,7 @@ export default function AdminDetallePermisos() {
         <div className="mb-4 max-w-md">
           <Input
             aria-label="Buscar reservas"
-            placeholder="Buscar por ID, losa, disciplina, fecha u hora..."
+            placeholder="Buscar por código, DNI, nombre, losa, disciplina, fecha u hora..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             icon={<FaSearch />}

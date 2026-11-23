@@ -6,7 +6,6 @@ import Swal from "sweetalert2";
 import { FaEye, FaFilePdf, FaSearch, FaShieldAlt } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
-import { API_BASE_URL } from "~/lib/constants";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
 import { Button, Input, Modal, Badge, Spinner } from "~/shared/components/ui";
 import { formatFecha } from "~/shared/utils/format";
@@ -78,11 +77,18 @@ export default function SeguridadModulo() {
   const verDetalles = async (permiso: Record<string, unknown>) => {
     setDetallesModal({ open: true, permiso, detalles: [], loading: true });
     try {
-      const res = await fetch(`${API_BASE_URL}/permisos/detalles/${permiso.id_p}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("No se pudieron obtener los detalles");
-      const result = await res.json();
+      const formData = new FormData();
+      formData.append("intent", "detalles");
+      formData.append("id_p", String(permiso.id_p));
+      const res = await fetch("/api/permiso", { method: "post", body: formData });
+      const result = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: Record<string, unknown>[];
+        error?: string;
+      };
+      if (!res.ok || result.ok === false) {
+        throw new Error(result.error || "No se pudieron obtener los detalles");
+      }
       setDetallesModal((s) => ({ ...s, detalles: result.data || [], loading: false }));
     } catch {
       Swal.fire({
@@ -96,15 +102,20 @@ export default function SeguridadModulo() {
 
   const verDocumento = async (idP: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/permisos/${idP}/documento`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("No se pudo obtener el documento");
-      const result = await res.json();
-      const doc = result.data || result;
-      if (doc?.success && doc?.url_drive) {
-        window.open(doc.url_drive, "_blank");
-      } else if (doc?.url_drive) {
+      const formData = new FormData();
+      formData.append("intent", "documento");
+      formData.append("id_p", String(idP));
+      const res = await fetch("/api/permiso", { method: "post", body: formData });
+      const result = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: { url_drive?: string };
+        error?: string;
+      };
+      if (!res.ok || result.ok === false) {
+        throw new Error(result.error || "No se pudo obtener el documento");
+      }
+      const doc = result.data;
+      if (doc?.url_drive) {
         window.open(doc.url_drive, "_blank");
       } else {
         Swal.fire({

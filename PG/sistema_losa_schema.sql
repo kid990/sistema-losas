@@ -280,4 +280,10 @@ CREATE TRIGGER trg_reportes_generados_updated_at
 BEFORE UPDATE ON reportes_generados
 FOR EACH ROW EXECUTE FUNCTION actualizar_updated_at();
 
+-- Índices de rendimiento para listados y reportes
+CREATE INDEX IF NOT EXISTS permisos_idx_fecha_creacion ON permisos (fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS permisos_idx_estado_fecha ON permisos (estado, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS detalle_permisos_idx_fecha ON detalle_permisos (fecha);
+CREATE INDEX IF NOT EXISTS detalle_permisos_idx_fecha_losa ON detalle_permisos (fecha, id_l);
+
 COMMIT;

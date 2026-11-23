@@ -6,6 +6,7 @@ import { Sidebar } from "~/shared/components/Sidebar";
 
 import { Breadcrumb } from "~/shared/components/ui/Breadcrumb";
 import { ChatbotWidget } from "~/shared/components/ChatbotWidget";
+import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireRole(request, "trabajador", "Administrador");
@@ -125,7 +126,14 @@ export default function AdminLayout() {
         </div>
 
         <div className="admin-content flex-1">
-          <Breadcrumb />
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex-1 min-w-0 [&>nav]:mb-0">
+              <Breadcrumb />
+            </div>
+            <div className="shrink-0">
+              <ThemeToggle variant="segmented" />
+            </div>
+          </div>
           <Outlet />
         </div>
         <ChatbotWidget />

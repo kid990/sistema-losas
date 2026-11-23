@@ -7,6 +7,7 @@ import { FaTrash, FaPlus, FaEye, FaFilter } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
 import { api, responseHeadersWithCookies } from "~/services/api.server";
 import { API_BASE_URL } from "~/lib/constants";
+import { fetchWithAuth } from "~/lib/fetch-with-auth";
 import { Button, Modal, Select } from "~/shared/components/ui";
 
 function getImageSrc(foto: string) {
@@ -136,10 +137,9 @@ export default function AdminImagenes() {
       uploadForm.append("imagen", fileToUpload);
       uploadForm.append("id_l", selectedLosa);
 
-      const res = await fetch(`${API_BASE_URL}/imagenes/upload`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/imagenes/upload`, {
         method: "POST",
         body: uploadForm,
-        credentials: "include",
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || result.ok === false || result.error) {
@@ -188,9 +188,8 @@ export default function AdminImagenes() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/imagenes/${img.id_img}`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/imagenes/${img.id_img}`, {
         method: "DELETE",
-        credentials: "include",
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || result.ok === false) {

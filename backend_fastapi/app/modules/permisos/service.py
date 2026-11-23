@@ -1,5 +1,6 @@
+import asyncio
 from contextlib import suppress
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -35,8 +36,8 @@ from app.modules.permisos.schemas import DetallePermisoIn, PermisoIn, PermisoTra
 from app.queue.dispatch import dispatch_email
 
 
-def _utc_naive() -> datetime:
-    return datetime.now(UTC).replace(tzinfo=None)
+def _local_now() -> datetime:
+    return datetime.now()
 
 
 async def _validate_details(
@@ -435,7 +436,7 @@ async def automatic_review(db: AsyncSession, worker_id: int) -> dict[str, Any]:
         )
         permission.estado = new_status
         permission.id_t_decision = worker_id
-        permission.fecha_decision = _utc_naive()
+        permission.fecha_decision = _local_now()
         db.add(
             Notificacion(
                 mensaje=f"Revisión automática: {new_status}. {reason}",
@@ -523,6 +524,7 @@ async def create_user_permission(
             estado=final_status,
             id_arch=archive_id,
             autor="Usuario",
+            fecha_creacion=datetime.now(),
         )
         db.add(permission)
         await db.flush()
@@ -563,7 +565,49 @@ async def create_user_permission(
     }
 
 
-async def list_permissions(db: AsyncSession, estado: str | None) -> list[dict[str, Any]]:
+async def _attach_requester_info(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Agrega código, DNI y nombre completo del solicitante a cada permiso."""
+    codigos = {str(row["codigo_usuario"]) for row in rows if row.get("codigo_usuario")}
+    padron: dict[str, dict[str, Any]] = {}
+    if codigos:
+        try:
+            external = await asyncio.wait_for(list_usuarios(), timeout=5)
+            padron = {
+                str(item.get("codigo")): item
+                for item in external
+                if str(item.get("codigo")) in codigos
+            }
+        except Exception:
+            padron = {}
+    for row in rows:
+        codigo_usuario = row.pop("codigo_usuario", None)
+        dni_trabajador = row.pop("dni_trabajador", None)
+        nombres = row.pop("nombres_trabajador", None)
+        apellido_p = row.pop("apellido_p_trabajador", None)
+        apellido_m = row.pop("apellido_m_trabajador", None)
+        row.pop("id_u", None)
+        row.pop("id_t", None)
+        if codigo_usuario:
+            external = padron.get(str(codigo_usuario), {})
+            row["codigo"] = str(codigo_usuario)
+            row["dni"] = external.get("dni") or "-"
+            row["nombre_completo"] = external.get("nombre_completo") or str(codigo_usuario)
+        else:
+            row["codigo"] = "-"
+            row["dni"] = dni_trabajador or "-"
+            row["nombre_completo"] = " ".join(
+                str(part) for part in (nombres, apellido_p, apellido_m) if part
+            ) or "-"
+    return rows
+
+
+async def list_permissions(
+    db: AsyncSession,
+    estado: str | None,
+    *,
+    limit: int = 1000,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
     if estado == "Aprobado":
         estado = "Aceptado"
     stmt = (
@@ -575,13 +619,59 @@ async def list_permissions(db: AsyncSession, estado: str | None) -> list[dict[st
             Permiso.duracion_t,
             Permiso.estado,
             Permiso.autor,
+            Permiso.id_u,
+            Permiso.id_t,
+            User.codigo.label("codigo_usuario"),
+            Trabajador.dni.label("dni_trabajador"),
+            Trabajador.nombres.label("nombres_trabajador"),
+            Trabajador.apellido_p.label("apellido_p_trabajador"),
+            Trabajador.apellido_m.label("apellido_m_trabajador"),
         )
+        .outerjoin(User, User.id_u == Permiso.id_u)
+        .outerjoin(Trabajador, Trabajador.id_t == Permiso.id_t)
         .order_by(Permiso.fecha_creacion.desc())
+        .limit(limit)
+        .offset(offset)
     )
     if estado:
         normalized_state = "Aceptado" if estado == "Aprobado" else estado
         stmt = stmt.where(Permiso.estado == normalized_state)
-    return [dict(row) for row in (await db.execute(stmt)).mappings().all()]
+    rows = [dict(row) for row in (await db.execute(stmt)).mappings().all()]
+    return await _attach_requester_info(rows)
+
+
+async def summary_counts(db: AsyncSession) -> dict[str, Any]:
+    rows = (
+        await db.execute(select(Permiso.estado, func.count(Permiso.id_p)).group_by(Permiso.estado))
+    ).all()
+    counts = {str(estado): int(total) for estado, total in rows}
+    pending = [
+        dict(row)
+        for row in (
+            await db.execute(
+                select(
+                    Permiso.id_p,
+                    Permiso.fecha_creacion,
+                    Permiso.id_arch.is_not(None).label("tiene_documento"),
+                    Permiso.tipo,
+                    Permiso.duracion_t,
+                    Permiso.estado,
+                    Permiso.autor,
+                )
+                .where(Permiso.estado == "Pendiente")
+                .order_by(Permiso.fecha_creacion.desc())
+                .limit(5)
+            )
+        ).mappings().all()
+    ]
+    return {
+        "total": sum(counts.values()),
+        "pendientes": counts.get("Pendiente", 0),
+        "aprobados": counts.get("Aceptado", 0),
+        "rechazados": counts.get("Rechazado", 0),
+        "cancelados": counts.get("Cancelado", 0),
+        "ultimos_pendientes": pending,
+    }
 
 
 async def get_details(
@@ -648,10 +738,19 @@ async def accepted_details(db: AsyncSession) -> list[dict[str, Any]]:
             Permiso.id_arch.is_not(None).label("tiene_documento"),
             Permiso.id_p,
             Permiso.tipo,
+            Permiso.id_u,
+            Permiso.id_t,
+            User.codigo.label("codigo_usuario"),
+            Trabajador.dni.label("dni_trabajador"),
+            Trabajador.nombres.label("nombres_trabajador"),
+            Trabajador.apellido_p.label("apellido_p_trabajador"),
+            Trabajador.apellido_m.label("apellido_m_trabajador"),
         )
         .join(Permiso, Permiso.id_p == DetallePermiso.id_p)
         .join(Losa, DetallePermiso.id_l == Losa.id_l)
         .outerjoin(Disciplina, Disciplina.id_d == Losa.id_d)
+        .outerjoin(User, User.id_u == Permiso.id_u)
+        .outerjoin(Trabajador, Trabajador.id_t == Permiso.id_t)
         .where(
             Permiso.estado == "Aceptado",
             DetallePermiso.fecha == date.today(),
@@ -659,7 +758,8 @@ async def accepted_details(db: AsyncSession) -> list[dict[str, Any]]:
         )
         .order_by(Permiso.id_p.desc(), DetallePermiso.fecha, DetallePermiso.hora_inicio)
     )
-    return [dict(row) for row in (await db.execute(stmt)).mappings().all()]
+    rows = [dict(row) for row in (await db.execute(stmt)).mappings().all()]
+    return await _attach_requester_info(rows)
 
 
 async def accepted_future(db: AsyncSession) -> list[dict[str, Any]]:
@@ -739,7 +839,7 @@ async def update_status(db: AsyncSession, permission_id: int, estado: str, worke
         permission.fecha_decision = None
     else:
         permission.id_t_decision = worker_id
-        permission.fecha_decision = _utc_naive()
+        permission.fecha_decision = _local_now()
     db.add(
         Notificacion(
             mensaje=f"El estado de tu permiso ha cambiado a: {estado}",
@@ -809,7 +909,7 @@ async def create_worker_permission(
     worker_owner = await db.get(Trabajador, payload.id_t)
     if worker_owner is None or worker_owner.estado != "Activo":
         raise AppError("Trabajador no encontrado o inactivo", 404)
-    await _validate_details(db, payload.detalles, enforce_request_window=True)
+    await _validate_details(db, payload.detalles, enforce_request_window=False)
     conflicts = await _conflicts(db, payload.detalles)
     if conflicts:
         raise AppError(
@@ -864,7 +964,8 @@ async def create_worker_permission(
             id_arch=archive_id,
             duracion_t=sum(item.duracion for item in payload.detalles),
             estado="Aceptado",
-            fecha_decision=_utc_naive(),
+            fecha_creacion=datetime.now(),
+            fecha_decision=_local_now(),
             autor="Administrador",
         )
         db.add(permission)

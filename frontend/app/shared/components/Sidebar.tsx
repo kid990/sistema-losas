@@ -6,7 +6,6 @@ import {
   FaUser, FaSignOutAlt, FaBars, FaChevronUp,
   FaRobot, FaChartBar,
 } from "react-icons/fa";
-import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 const groups = [
   { title: "General", items: [
@@ -101,9 +100,6 @@ export function Sidebar({ nombreUsuario, onToggleSidebar, sidebarOpen, toggleRef
 
       {/* ── Footer: Perfil ── */}
       <div className="admin-sidebar-footer">
-        <div className="sidebar-theme-row">
-          <ThemeToggle showLabel className="theme-toggle--wide" />
-        </div>
         {/* Submenú del perfil (aparece arriba) */}
         {profileOpen && (
           <div ref={profileMenuRef} className="admin-sidebar-profile-menu" role="menu" aria-label="Opciones de usuario">

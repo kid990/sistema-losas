@@ -6,7 +6,6 @@ import Swal from "sweetalert2";
 import { FaEye, FaFilePdf, FaCheck, FaTimes, FaUndo, FaSearch, FaFilter } from "react-icons/fa";
 import { requireRole } from "~/services/auth.server";
 import { api } from "~/services/api.server";
-import { API_BASE_URL } from "~/lib/constants";
 import {
   normalizeReservationApiError,
   reservationErrorMessage,
@@ -94,7 +93,7 @@ export default function AdminPermisos() {
     if (!busqueda.trim()) return list;
     const q = busqueda.toLowerCase();
     return list.filter((p) => {
-      const texto = `${p.id_p} ${p.autor} ${p.tipo} ${p.estado} ${p.duracion_t} ${formatFechaHora(p.fecha_creacion as string)}`.toLowerCase();
+      const texto = `${p.codigo} ${p.dni} ${p.nombre_completo} ${p.id_p} ${p.autor} ${p.tipo} ${p.estado} ${p.duracion_t} ${formatFechaHora(p.fecha_creacion as string)}`.toLowerCase();
       return texto.includes(q);
     });
   }, [list, busqueda]);
@@ -102,11 +101,18 @@ export default function AdminPermisos() {
   const verDetalles = async (permiso: Record<string, unknown>) => {
     setDetallesModal({ open: true, permiso, detalles: [], loading: true });
     try {
-      const res = await fetch(`${API_BASE_URL}/permisos/detalles/${permiso.id_p}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("No se pudieron obtener los detalles");
-      const result = await res.json();
+      const formData = new FormData();
+      formData.append("intent", "detalles");
+      formData.append("id_p", String(permiso.id_p));
+      const res = await fetch("/api/permiso", { method: "post", body: formData });
+      const result = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: Record<string, unknown>[];
+        error?: string;
+      };
+      if (!res.ok || result.ok === false) {
+        throw new Error(result.error || "No se pudieron obtener los detalles");
+      }
       setDetallesModal((s) => ({ ...s, detalles: result.data || [], loading: false }));
     } catch {
       Swal.fire({
@@ -172,15 +178,20 @@ export default function AdminPermisos() {
 
   const verDocumento = async (idP: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/permisos/${idP}/documento`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("No se pudo obtener el documento");
-      const result = await res.json();
-      const doc = result.data || result;
-      if (doc?.success && doc?.url_drive) {
-        window.open(doc.url_drive, "_blank");
-      } else if (doc?.url_drive) {
+      const formData = new FormData();
+      formData.append("intent", "documento");
+      formData.append("id_p", String(idP));
+      const res = await fetch("/api/permiso", { method: "post", body: formData });
+      const result = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: { url_drive?: string };
+        error?: string;
+      };
+      if (!res.ok || result.ok === false) {
+        throw new Error(result.error || "No se pudo obtener el documento");
+      }
+      const doc = result.data;
+      if (doc?.url_drive) {
         window.open(doc.url_drive, "_blank");
       } else {
         Swal.fire({
@@ -215,8 +226,9 @@ export default function AdminPermisos() {
   };
 
   const columnas = [
-    { name: "ID", selector: (r: Record<string, unknown>) => `#${r.id_p}`, width: "80px", sortable: true },
-    { name: "Solicitante", selector: (r: Record<string, unknown>) => (r.autor as string) || "-", sortable: true },
+    { name: "Código", selector: (r: Record<string, unknown>) => (r.codigo as string) || "-", width: "120px", sortable: true },
+    { name: "DNI", selector: (r: Record<string, unknown>) => (r.dni as string) || "-", width: "100px", sortable: true },
+    { name: "Solicitante", selector: (r: Record<string, unknown>) => (r.nombre_completo as string) || (r.autor as string) || "-", sortable: true },
     {
       name: "Tipo",
       cell: (r: Record<string, unknown>) => (
@@ -384,15 +396,23 @@ export default function AdminPermisos() {
       <Modal
         open={detallesModal.open}
         onClose={() => setDetallesModal({ open: false, permiso: null, detalles: [], loading: false })}
-        title={`Desglose del Permiso #${detallesModal.permiso?.id_p || ""}`}
+        title="Desglose del Permiso"
         size="lg"
       >
         <div className="space-y-4">
           {detallesModal.permiso && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-color)] text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-color)] text-xs">
               <div>
-                <span className="text-[var(--text-muted)] font-medium">Permiso ID:</span>
-                <p className="text-sm font-bold text-[var(--text-primary)]">#{String(detallesModal.permiso.id_p)}</p>
+                <span className="text-[var(--text-muted)] font-medium">Código:</span>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{String(detallesModal.permiso.codigo || "-")}</p>
+              </div>
+              <div>
+                <span className="text-[var(--text-muted)] font-medium">DNI:</span>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{String(detallesModal.permiso.dni || "-")}</p>
+              </div>
+              <div>
+                <span className="text-[var(--text-muted)] font-medium">Nombre completo:</span>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{String(detallesModal.permiso.nombre_completo || "-")}</p>
               </div>
               <div>
                 <span className="text-[var(--text-muted)] font-medium">Tipo:</span>
