@@ -14,12 +14,17 @@ Esta carpeta centraliza la infraestructura sin mover el código de `frontend/`,
 | `mysql` | Base del padrón `api_unheval` | 3306 |
 | `redis` | Broker y resultados temporales de Celery | 6379 |
 | `celery-worker` | Reportes, documentos, correos y sincronización | — |
+| `ml-cron` | Predicción diaria del modelo RF-04 (06:00) | — |
 
 `celery-beat`, `flower` y PostgreSQL local son perfiles opcionales. FastAPI y
 Celery utilizan por defecto la `DATABASE_URL` de Supabase definida en
 `backend_fastapi/.env.docker`. MySQL continúa siendo local para `backend_api`.
 MySQL y Redis persisten en volúmenes Docker; MySQL carga `DB/` únicamente cuando
 su volumen está vacío.
+
+`ml-cron` predice 14 días hábiles a las 06:00 (America/Lima), purga lo anterior
+a 30 días y se recupera si el contenedor arranca después de esa hora. Requiere
+`ml/models/rf04_ocupacion.joblib` en el host; se monta en solo lectura.
 
 ## Preparación
 

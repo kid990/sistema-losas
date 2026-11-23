@@ -107,6 +107,11 @@ def main() -> int:
                 "DELETE FROM prediccion_ocupacion WHERE fecha BETWEEN %s AND %s",
                 (fechas[0].date(), fechas[-1].date()),
             )
+            # Mantiene la tabla acotada: descarta predicciones viejas.
+            cur.execute(
+                "DELETE FROM prediccion_ocupacion WHERE fecha < %s",
+                (fechas[0].date() - timedelta(days=30),),
+            )
             cur.executemany(
                 "INSERT INTO prediccion_ocupacion "
                 "(fecha, hora, id_l, probabilidad, modelo_version) "

@@ -80,6 +80,7 @@ app/
 | `/reset-password` | — | Restablecer contraseña |
 | `/losas` | User | Ver losas disponibles |
 | `/horario` | User | Horarios interactivos |
+| `/predicciones` | User | Predicción de ocupación (RF-04) |
 | `/perfil` | User | Perfil de usuario |
 | `/permiso` | User | Solicitar permiso |
 | `/user/notifs` | User | Notificaciones |

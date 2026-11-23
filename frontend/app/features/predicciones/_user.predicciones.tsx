@@ -76,7 +76,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const hoy = new Date();
   const desde = iso(hoy);
-  const hasta = iso(sumarDias(hoy, 14));
+  const limite = iso(sumarDias(hoy, 30));
 
   const [losasData, disciplinasData, prediccionesData] = await Promise.all([
     api.get("/losas", request).catch(() => ({ data: [] })),
@@ -84,15 +84,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .get("/disciplinas/activas", request)
       .catch(() => api.get("/disciplinas/", request).catch(() => ({ data: [] }))),
     api
-      .get(`/ml/ocupacion?desde=${desde}&hasta=${hasta}`, request)
+      .get(`/ml/ocupacion?desde=${desde}&hasta=${limite}`, request)
       .catch(() => ({ data: [] })),
   ]);
+
+  const predicciones = unwrap<Prediccion>(prediccionesData);
+  const hasta = predicciones.at(-1)?.fecha?.slice(0, 10) ?? iso(sumarDias(hoy, 14));
 
   return data(
     {
       losas: unwrap<Losa>(losasData),
       disciplinas: unwrap<Disciplina>(disciplinasData),
-      predicciones: unwrap<Prediccion>(prediccionesData),
+      predicciones,
       hoy: desde,
       hasta,
     },

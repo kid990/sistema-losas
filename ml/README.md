@@ -88,16 +88,46 @@ Train hasta 2025 · test 2026.
 
 Validación expansiva: 0.8308 ± 0.0080.
 
-## Predicciones para la vista
+## Predicciones
 
 ```powershell
+# manual
 ml\.venv\Scripts\python.exe -m ml.predict_ocupacion
+
+# lanzador Windows (usa el venv y la raíz del repo)
+ml\predict_diario.cmd
 ```
 
-Predice los próximos 14 días hábiles (excluye feriados) y los guarda en
-`prediccion_ocupacion`. Opciones: `--dias 21`, `--desde 2026-12-01`,
-`--modelo <ruta.joblib>`. Requiere la migración
+Predice los próximos **14 días hábiles** (lunes a viernes, sin feriados) y los
+guarda en `prediccion_ocupacion`. Opciones: `--dias 21`,
+`--desde 2026-12-01`, `--modelo <ruta.joblib>`. Requiere la migración
 `PG/migrations/20261123_prediccion_ocupacion.sql`.
+
+Cada corrida reemplaza su ventana y purga las predicciones con más de 30 días.
+
+## Servicio automático (Docker)
+
+El servicio `ml-cron` se levanta con el stack:
+
+- Ejecuta a las **06:00 America/Lima**.
+- Si el contenedor arranca después de las 06:00 y todavía no hay corrida de
+  hoy, la ejecuta (catch-up).
+- Si ya existe la predicción del día, la omite.
+- Monta `ml/models` en solo lectura; el `.joblib` debe existir en el host.
+
+Imagen: `docker/ml/Dockerfile`. Servicio en `docker/compose.yml` y
+`docker/compose.production.yml`.
+
+## Reentrenamiento
+
+Es **manual**. Recomendado mensual + inicio de semestre:
+
+```powershell
+ml\.venv\Scripts\python.exe -m ml.train_rf04
+```
+
+No se automatiza: publicar un modelo nuevo debe pasar por revisión de métricas
+(ROC-AUC y Brier) antes de reemplazar el vigente.
 
 ## Notas
 

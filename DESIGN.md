@@ -35,7 +35,7 @@ Estados: verde para disponible/aprobado, ámbar para revisión, rojo para ocupad
 
 ## Tipografía
 
-- **Display:** `Barlow Condensed`, para títulos, cifras y placas de losa.
+- **Display y menú:** `Barlow Condensed`, para títulos, cifras, placas y enlaces del menú lateral.
 - **UI y lectura:** `Public Sans`, para navegación, formularios, tablas y textos.
 - Los títulos usan jerarquía fuerte y medida corta; el cuerpo mantiene entre 65 y 75 caracteres cuando es narrativo.
 

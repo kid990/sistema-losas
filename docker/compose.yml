@@ -203,6 +203,26 @@ services:
       redis:
         condition: service_healthy
 
+  ml-cron:
+    image: sirlod-ml-cron:local
+    build:
+      context: ..
+      dockerfile: docker/ml/Dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ../backend_fastapi/.env.docker
+    environment:
+      TZ: ${TZ:-America/Lima}
+    volumes:
+      - ../ml/models:/app/ml/models:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - public
+
   frontend:
     image: sirlod-frontend:local
     build:

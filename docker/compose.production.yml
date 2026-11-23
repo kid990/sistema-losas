@@ -58,3 +58,8 @@ services:
 
   flower:
     ports: !reset []
+
+  # La predicción diaria se conserva en producción. El modelo se monta desde
+  # ml/models (subir rf04_ocupacion.joblib al servidor antes de desplegar).
+  ml-cron:
+    restart: always

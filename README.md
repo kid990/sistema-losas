@@ -11,6 +11,7 @@ Esta guía está orientada a desarrollo local en Windows con PowerShell.
 | Frontend SSR | `frontend/` | React 19 + React Router 8 + TypeScript | 5173 |
 | API principal | `backend_fastapi/` | FastAPI + SQLAlchemy async + PostgreSQL | 3000 |
 | Padrón UNHEVAL | `backend_api/` | Express + MySQL | 3001 |
+| Predicción programada | `ml/` | Python + scikit-learn (`ml-cron`) | — |
 
 Flujo principal:
 
@@ -84,9 +85,9 @@ Desde MySQL Workbench crea una base llamada `api_unheval` y ejecuta:
 También puedes hacerlo desde consola:
 
 ```powershell
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS api_unheval CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p --database=api_unheval --execute="source DB/api_unheval_schema.sql"
-mysql -u root -p --database=api_unheval --execute="source DB/api_unheval_data.sql"
+mysql -u root -p --default-character-set=utf8mb4 -e "CREATE DATABASE IF NOT EXISTS api_unheval CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p --default-character-set=utf8mb4 --database=api_unheval --execute="source DB/api_unheval_schema.sql"
+mysql -u root -p --default-character-set=utf8mb4 --database=api_unheval --execute="source DB/api_unheval_data.sql"
 ```
 
 ### 4. Instalar FastAPI
@@ -246,6 +247,9 @@ docker compose --env-file docker/.env -f docker/compose.yml up --build -d
 
 Abre `http://localhost:5173` (Swagger en `http://localhost:3000/docs`).
 
+El servicio `ml-cron` arranca con el stack y predice a las 06:00; requiere que
+exista `ml/models/rf04_ocupacion.joblib` en el host.
+
 La guía completa —perfiles de Celery y Flower, PostgreSQL local, overlay de producción con Nginx y variables de entorno— está en [`docker/README.md`](docker/README.md).
 
 ## Comandos de desarrollo
@@ -334,19 +338,27 @@ El respaldo queda fuera del repositorio para que `git add -A` no lo incluya por 
 - LosaBot con DeepSeek o Gemini, seleccionable desde `.env`, y respuestas locales de respaldo.
 - Gestión de losas, disciplinas, imágenes, usuarios y trabajadores.
 - Horarios configurables y días bloqueados.
+- Predicción de ocupación por losa y franja horaria (RF-04), actualizada a diario.
 - Notificaciones, almacenamiento S3 y recuperación de contraseña.
 
 ## Modelo de ocupación (RF-04)
 
-Entrenamiento offline con scikit-learn; no forma parte de la imagen de la API.
+Entrenamiento offline con scikit-learn. La predicción diaria corre en el
+servicio `ml-cron` del compose.
 
 ```powershell
 python -m venv ml\.venv
 ml\.venv\Scripts\python.exe -m pip install -r ml\requirements.txt
+
+# entrenar (manual, mensual)
 ml\.venv\Scripts\python.exe -m ml.train_rf04
+
+# predecir ahora (normalmente lo hace ml-cron a las 06:00)
+ml\.venv\Scripts\python.exe -m ml.predict_ocupacion
 ```
 
-Comandos, métricas y artefactos: [`ml/README.md`](ml/README.md).
+`ml-cron` predice 14 días hábiles, purga lo anterior a 30 días y se recupera si
+Docker estaba apagado. Detalle: [`ml/README.md`](ml/README.md).
 
 ## Estructura útil
 
@@ -358,7 +370,7 @@ SISTEMA_LOSA/
 │   └── tests/
 ├── backend_api/           # Padrón UNHEVAL/MySQL
 ├── frontend/              # React Router SSR
-├── ml/                    # Entrenamiento offline del modelo RF-04
+├── ml/                    # Modelo RF-04: entrenamiento y predicción
 ├── PG/                    # Esquema y migraciones PostgreSQL
 ├── DB/                    # Esquema y datos del padrón MySQL
 └── README.md
