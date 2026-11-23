@@ -893,8 +893,17 @@ async def by_user(db: AsyncSession, user_id: int) -> list[dict[str, Any]]:
             Permiso.duracion_t,
             Permiso.estado,
             Permiso.fecha_creacion,
+            func.min(DetallePermiso.fecha).label("fecha_uso"),
         )
+        .outerjoin(DetallePermiso, DetallePermiso.id_p == Permiso.id_p)
         .where(Permiso.id_u == user_id)
+        .group_by(
+            Permiso.id_p,
+            Permiso.tipo,
+            Permiso.duracion_t,
+            Permiso.estado,
+            Permiso.fecha_creacion,
+        )
         .order_by(Permiso.fecha_creacion.desc())
     )
     return [dict(row) for row in (await db.execute(stmt)).mappings().all()]

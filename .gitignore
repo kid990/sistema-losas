@@ -96,3 +96,7 @@ mail.log
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Artefactos generados por los scripts de ml/ (binarios y datasets)
+ml/models/
+ml/data/

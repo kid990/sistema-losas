@@ -18,6 +18,7 @@ export default [
     route("inicio", "features/losas/_user.inicio.tsx"),
     route("losas", "features/losas/_public.losas.tsx"),
     route("horario", "features/horarios/_public.horario.tsx"),
+    route("predicciones", "features/predicciones/_user.predicciones.tsx"),
     route("perfil", "features/perfil/_user.perfil.tsx"),
     route("permiso", "features/permisos/_user.permiso.tsx"),
     route("notificaciones", "features/notificaciones/_user.notificacion.tsx"),

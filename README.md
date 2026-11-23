@@ -336,6 +336,18 @@ El respaldo queda fuera del repositorio para que `git add -A` no lo incluya por 
 - Horarios configurables y días bloqueados.
 - Notificaciones, almacenamiento S3 y recuperación de contraseña.
 
+## Modelo de ocupación (RF-04)
+
+Entrenamiento offline con scikit-learn; no forma parte de la imagen de la API.
+
+```powershell
+python -m venv ml\.venv
+ml\.venv\Scripts\python.exe -m pip install -r ml\requirements.txt
+ml\.venv\Scripts\python.exe -m ml.train_rf04
+```
+
+Comandos, métricas y artefactos: [`ml/README.md`](ml/README.md).
+
 ## Estructura útil
 
 ```text
@@ -346,6 +358,7 @@ SISTEMA_LOSA/
 │   └── tests/
 ├── backend_api/           # Padrón UNHEVAL/MySQL
 ├── frontend/              # React Router SSR
+├── ml/                    # Entrenamiento offline del modelo RF-04
 ├── PG/                    # Esquema y migraciones PostgreSQL
 ├── DB/                    # Esquema y datos del padrón MySQL
 └── README.md

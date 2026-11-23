@@ -4,6 +4,7 @@ import {
   FaHome,
   FaFutbol,
   FaClock,
+  FaChartLine,
   FaFileAlt,
   FaBell,
   FaUserCircle,
@@ -12,7 +13,6 @@ import {
   FaBars,
   FaThLarge,
 } from "react-icons/fa";
-import { ThemeToggle } from "~/shared/components/ThemeToggle";
 
 interface SidebarUserProps {
   nombre?: string;
@@ -27,6 +27,7 @@ const navItems = [
   { to: "/inicio", icon: FaHome, label: "Inicio" },
   { to: "/losas", icon: FaFutbol, label: "Losas Deportivas" },
   { to: "/horario", icon: FaClock, label: "Horarios de Atención" },
+  { to: "/predicciones", icon: FaChartLine, label: "Predicción de Ocupación" },
   { to: "/permiso", icon: FaFileAlt, label: "Mis Permisos" },
   { to: "/notificaciones", icon: FaBell, label: "Notificaciones" },
 ];
@@ -107,9 +108,6 @@ export function SidebarUser({
 
       {/* ── Footer: Perfil con submenú pop-up ── */}
       <div className="admin-sidebar-footer">
-        <div className="sidebar-theme-row">
-          <ThemeToggle showLabel className="theme-toggle--wide" />
-        </div>
         {profileOpen && (
           <div ref={profileMenuRef} className="admin-sidebar-profile-menu" role="menu" aria-label="Opciones de perfil">
             <NavLink

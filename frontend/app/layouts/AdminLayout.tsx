@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Outlet, useLoaderData, useLocation } from "react-router";
+import { NavLink, Outlet, useLoaderData, useLocation } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireRole } from "~/services/auth.server";
 import { Sidebar } from "~/shared/components/Sidebar";
 
-import { Breadcrumb } from "~/shared/components/ui/Breadcrumb";
 import { ChatbotWidget } from "~/shared/components/ChatbotWidget";
 import { ThemeToggle } from "~/shared/components/ThemeToggle";
+import { FaBell } from "react-icons/fa";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireRole(request, "trabajador", "Administrador");
@@ -107,33 +107,39 @@ export default function AdminLayout() {
         inert={sidebarOpen && !isDesktop}
         className={`min-h-screen min-w-0 flex flex-col ${desktopCollapsed ? "lg:ml-0" : "lg:ml-[272px]"}`}
       >
-        {/* Mini topbar solo para mobile — botón abrir sidebar */}
-        <div className="admin-mobile-topbar lg:hidden">
-          <button
-            ref={!isDesktop ? toggleRef : undefined}
-            type="button"
-            aria-expanded={sidebarOpen}
-            aria-controls="admin-sidebar"
-            aria-label="Abrir menú"
-            onClick={toggleSidebar}
-            className="sidebar-toggle-btn"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <span className="mobile-brand">Panel de Bienestar</span>
+        {/* Topbar */}
+        <div className="admin-mobile-topbar flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <button
+              ref={!isDesktop ? toggleRef : undefined}
+              type="button"
+              aria-expanded={sidebarOpen}
+              aria-controls="admin-sidebar"
+              aria-label="Abrir menú"
+              onClick={toggleSidebar}
+              className="sidebar-toggle-btn"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="mobile-brand">Panel de Bienestar</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <NavLink
+              to="/dashboard/notificacion"
+              title="Notificaciones"
+              aria-label="Notificaciones"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              <FaBell size={16} />
+            </NavLink>
+            <ThemeToggle className="theme-toggle--plain" />
+          </div>
         </div>
 
         <div className="admin-content flex-1">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex-1 min-w-0 [&>nav]:mb-0">
-              <Breadcrumb />
-            </div>
-            <div className="shrink-0">
-              <ThemeToggle variant="segmented" />
-            </div>
-          </div>
           <Outlet />
         </div>
         <ChatbotWidget />

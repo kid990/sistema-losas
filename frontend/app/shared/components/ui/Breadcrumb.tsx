@@ -23,6 +23,7 @@ const ROUTE_LABELS: Record<string, string> = {
   permiso: "Mis Permisos",
   user: "Usuario",
   notifs: "Notificaciones",
+  predicciones: "Predicción de Ocupación",
 };
 
 interface BreadcrumbProps {
@@ -58,7 +59,7 @@ export function Breadcrumb({ className = "", customItems }: BreadcrumbProps) {
       // Avoid duplicating each section's route used as its home.
       if (
         segment === "dashboard" ||
-        (segment === "inicio" && index === 1) ||
+        segment === "inicio" ||
         (segment === "losas" && index === 0)
       ) {
         return;
@@ -76,6 +77,9 @@ export function Breadcrumb({ className = "", customItems }: BreadcrumbProps) {
       });
     });
   }
+
+  // Un solo nivel ("Inicio") no aporta: se oculta para no ocupar la cabecera.
+  if (items.length <= 1) return null;
 
   return (
     <nav

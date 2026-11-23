@@ -3,12 +3,18 @@ import { Link, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import Swal from "sweetalert2";
-import { FaEye, FaFilePdf, FaSearch, FaHistory } from "react-icons/fa";
+import { FaEye, FaFilePdf, FaSearch, FaHistory, FaCalendarAlt } from "react-icons/fa";
 import { requireAuth } from "~/services/auth.server";
 import { api, responseHeadersWithCookies } from "~/services/api.server";
 import { TablaGenerica } from "~/shared/components/TablaGenerica";
 import { Button, Input, Modal, Badge, Spinner } from "~/shared/components/ui";
 import { formatFecha, formatFechaHora } from "~/shared/utils/format";
+
+function anioDePermiso(permiso: Record<string, unknown>): number | null {
+  const valor = String(permiso.fecha_uso ?? permiso.fecha_creacion ?? "");
+  const anio = Number(valor.slice(0, 4));
+  return Number.isInteger(anio) && anio > 1900 ? anio : null;
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireAuth(request);
@@ -39,14 +45,34 @@ export default function UserPermiso() {
 
   const list = (permisos as Record<string, unknown>[]) || [];
 
+  const anioActual = useMemo(() => new Date().getFullYear(), []);
+
+  const anios = useMemo(() => {
+    const valores = new Set<number>([anioActual]);
+    for (const permiso of list) {
+      const anio = anioDePermiso(permiso);
+      if (anio) valores.add(anio);
+    }
+    return [...valores].sort((a, b) => b - a);
+  }, [list, anioActual]);
+
+  const [anio, setAnio] = useState(() =>
+    list.some((permiso) => anioDePermiso(permiso) === anioActual) ? String(anioActual) : "todos"
+  );
+
+  const porAnio = useMemo(
+    () => (anio === "todos" ? list : list.filter((permiso) => String(anioDePermiso(permiso)) === anio)),
+    [list, anio]
+  );
+
   const filtrados = useMemo(() => {
-    if (!busqueda.trim()) return list;
+    if (!busqueda.trim()) return porAnio;
     const q = busqueda.toLowerCase();
-    return list.filter((p) => {
+    return porAnio.filter((p) => {
       const texto = `${p.id_p} ${p.tipo} ${p.duracion_t} ${p.estado} ${formatFechaHora(p.fecha_creacion as string)}`.toLowerCase();
       return texto.includes(q);
     });
-  }, [list, busqueda]);
+  }, [porAnio, busqueda]);
 
   const verDetalles = async (permiso: Record<string, unknown>) => {
     setDetallesModal({ open: true, permiso, detalles: [], loading: true });
@@ -172,6 +198,12 @@ export default function UserPermiso() {
         ),
     },
     {
+      name: "Fecha de Uso",
+      selector: (r: Record<string, unknown>) =>
+        r.fecha_uso ? formatFecha(String(r.fecha_uso)) : "No informado",
+      sortable: true,
+    },
+    {
       name: "Fecha Solicitud",
       selector: (r: Record<string, unknown>) => formatFechaHora(r.fecha_creacion as string),
       sortable: true,
@@ -218,14 +250,37 @@ export default function UserPermiso() {
       </div>
 
       <div className="card-theme min-w-0 p-6">
-        <div className="mb-4 max-w-md">
-          <Input
-            aria-label="Buscar permisos"
-            placeholder="Buscar por ID, tipo o fecha..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            icon={<FaSearch />}
-          />
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="w-full max-w-md flex-1">
+            <Input
+              aria-label="Buscar permisos"
+              placeholder="Buscar por ID, tipo o fecha..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              icon={<FaSearch />}
+            />
+          </div>
+
+          <label className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 text-sm font-semibold text-[var(--text-primary)]">
+            <FaCalendarAlt className="text-[var(--text-muted)]" aria-hidden="true" />
+            <span className="sr-only">Filtrar por año</span>
+            <select
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+              className="bg-transparent py-2 pr-1 text-sm font-semibold outline-none"
+            >
+              <option value="todos">Todos los años</option>
+              {anios.map((valor) => (
+                <option key={valor} value={String(valor)}>
+                  {valor}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <p className="text-xs font-medium text-[var(--text-muted)] sm:ml-auto">
+            {filtrados.length} de {list.length} permisos
+          </p>
         </div>
 
         <TablaGenerica
@@ -233,7 +288,11 @@ export default function UserPermiso() {
           datos={filtrados}
           titulo="Mis Solicitudes Realizadas"
           mensajeVacio="No tienes permisos registrados"
-          submensajeVacio={busqueda ? "No hay solicitudes con ese criterio" : "Realiza tu primera reserva desde la sección de horarios."}
+          submensajeVacio={
+            busqueda || anio !== "todos"
+              ? "No hay solicitudes con ese criterio"
+              : "Realiza tu primera reserva desde la sección de horarios."
+          }
           acciones={(row: Record<string, unknown>) => (
             <button
               type="button"

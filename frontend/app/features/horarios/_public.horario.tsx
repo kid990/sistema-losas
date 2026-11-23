@@ -13,10 +13,7 @@ import {
 } from "~/lib/reservation-errors";
 import { Button, Modal } from "~/shared/components/ui";
 import {
-  FaCheck,
-  FaTimes,
   FaCalendarAlt,
-  FaClock,
   FaFileUpload,
   FaCalendarCheck,
   FaInfoCircle,
@@ -68,6 +65,27 @@ const DEFAULT_CONFIG: Config = {
 };
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
+
+const ICONOS_ESTADO: Record<string, string> = {
+  Libre: "M4 10.5 8 14.5 16 6",
+  Elegido: "M4 10.5 8 14.5 16 6",
+  Ocupado: "M5 5h10v10H5z",
+  "En revisión": "M6 3.5h8M6 16.5h8M7 3.5c0 3.5 6 3.5 6 6.5s-6 3-6 6.5M13 3.5c0 3.5-6 3.5-6 6.5s6 3 6 6.5",
+  Pasado: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM10 6v4l2.5 2",
+};
+
+function IconoEstado({ estado }: { estado: string }) {
+  return (
+    <svg
+      className="size-4 shrink-0 stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={ICONOS_ESTADO[estado] ?? ICONOS_ESTADO.Libre} className={estado === "Ocupado" ? "fill-current" : "fill-none"} />
+    </svg>
+  );
+}
 
 const esPdfValido = (archivo: File) =>
   archivo.type === "application/pdf" &&
@@ -514,109 +532,108 @@ export default function HorarioPublic() {
         </div>
       </div>
 
-      {/* ─── Tabla / Grilla de Horarios Moderna ────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="max-h-[66vh] max-w-full overflow-auto scrollbar-thin">
-          <table className="w-full min-w-max border-collapse text-left">
-            {/* Cabecera pegajosa */}
-            <thead className="sticky top-0 z-20 bg-slate-900 text-white shadow-xs">
-              <tr>
-                <th className="sticky left-0 z-30 min-w-[130px] bg-slate-950 px-4 py-3.5 text-xs font-black uppercase tracking-wider text-slate-300 border-r border-slate-800">
-                  <div className="flex items-center gap-1.5">
-                    <FaClock className="text-slate-400" />
-                    <span>Horario</span>
-                  </div>
-                </th>
-                {losasOrdenadas.map((losa) => (
-                  <th
-                    key={losa.id_l}
-                    className="min-w-[150px] border-r border-slate-800 px-4 py-3 text-center last:border-r-0"
+      {/* ─── Tabla / Grilla de Horarios ──────────────────────── */}
+      <div className="relative overflow-x-auto overscroll-x-contain rounded-xl border border-[var(--ui-line)] bg-[var(--ui-surface)] shadow-sm">
+        <table className="w-full min-w-max border-separate border-spacing-1 p-1 text-left">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className="sticky left-0 z-[1] w-16 bg-[var(--ui-surface)] px-2 pb-2 text-left align-bottom text-[11px] font-bold uppercase tracking-widest text-[var(--ui-muted)] sm:w-20"
+              >
+                Hora
+              </th>
+              {losasOrdenadas.map((losa) => (
+                <th key={losa.id_l} scope="col" className="min-w-[84px] px-0 pt-1 pb-2 text-center align-bottom">
+                  <span className="block text-[11px] font-bold uppercase tracking-widest text-[var(--ui-muted)]">
+                    Losa
+                  </span>
+                  <span
+                    className="mt-1 inline-grid size-11 place-items-center rounded-md bg-[#1757b8] font-slab text-[26px] leading-none font-bold text-white shadow-[inset_0_0_0_3px_#1757b8,inset_0_0_0_5px_rgb(255_255_255/0.75)]"
+                    title={`${losa.nombre}${getDisciplinaNombre(losa.id_d) ? ` · ${getDisciplinaNombre(losa.id_d)}` : ""}`}
                   >
-                    <div className="font-extrabold text-white text-xs tracking-tight">
-                      {losa.nombre}
-                    </div>
-                    <div className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-white/10 text-cyan-200 text-[10px] font-medium tracking-tight">
-                      {getDisciplinaNombre(losa.id_d)}
-                    </div>
+                    {losa.numero_l || losa.id_l}
+                  </span>
+                  <span className="sr-only">{losa.nombre}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {horarios.map((horario) => {
+              const [horaInicio, horaFin] = horario.split(" - ");
+              return (
+                <tr key={horario}>
+                  <th
+                    scope="row"
+                    className="sticky left-0 z-[1] w-16 bg-[var(--ui-surface)] px-2 text-left font-slab leading-none tabular-nums sm:w-20"
+                  >
+                    <span className="block text-lg font-semibold text-[var(--ui-ink)]">{horaInicio}</span>
+                    <span className="block text-sm font-normal text-[var(--ui-muted)]">
+                      <span className="sr-only">a </span>
+                      {horaFin}
+                    </span>
                   </th>
-                ))}
-              </tr>
-            </thead>
 
-            {/* Filas de horas */}
-            <tbody className="divide-y divide-slate-100">
-              {horarios.map((horario, idx) => (
-                <tr
-                  key={horario}
-                  className={`transition-colors ${
-                    idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"
-                  } hover:bg-slate-50/80`}
-                >
-                  {/* Columna de hora sticky */}
-                  <td className="sticky left-0 z-10 border-r border-slate-200 bg-slate-100/90 backdrop-blur-xs px-3.5 py-2 text-center text-xs font-mono font-bold text-slate-700 shadow-xs">
-                    {horario}
-                  </td>
-
-                  {/* Celdas de cada losa */}
                   {losasOrdenadas.map((losa) => {
                     const estado = getEstadoHorario(losa.id_l, horario);
                     const seleccionado = seleccionados.some(
                       (s) => s.losaId === losa.id_l && s.horario === horario
                     );
 
-                    let botonClase = "";
+                    let celdaClase = "";
                     let etiqueta = "";
-                    let icono = null;
 
-                    if (estado === "Disponible" && seleccionado) {
-                      botonClase =
-                        "bg-[#1B6EB6] text-white shadow-sm ring-2 ring-[#1B6EB6]/30 font-bold hover:bg-[#155994]";
-                      etiqueta = "Elegido";
-                      icono = <FaCheck className="text-[10px]" />;
-                    } else if (estado === "Disponible") {
-                      botonClase =
-                        "bg-emerald-50 text-slate-900 border border-emerald-300 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 font-bold shadow-2xs hover:shadow-sm cursor-pointer";
-                      etiqueta = "Libre";
-                      icono = <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:bg-white shrink-0" />;
+                    if (estado === "Disponible") {
+                      etiqueta = seleccionado ? "Elegido" : "Libre";
+                      celdaClase = seleccionado
+                        ? "border border-emerald-700 bg-emerald-600 font-bold text-white shadow-[inset_0_0_0_2px_rgb(255_255_255/0.9)]"
+                        : "border border-emerald-600 bg-emerald-100 font-semibold text-emerald-900 hover:shadow-[inset_0_0_0_2px_#059669]";
                     } else if (estado === "Ocupado") {
-                      botonClase =
-                        "bg-rose-50/70 text-slate-900 border border-rose-200/90 cursor-not-allowed font-bold";
                       etiqueta = "Ocupado";
-                      icono = <FaTimes className="text-[10px] text-rose-600 shrink-0" />;
+                      celdaClase = "border border-rose-600 bg-rose-100 font-semibold text-rose-900";
                     } else if (estado === "Pendiente") {
-                      botonClase =
-                        "bg-amber-50 text-slate-900 border border-amber-300 cursor-not-allowed font-bold";
-                      etiqueta = "Revisión";
-                      icono = <FaClock className="text-[10px] text-amber-600 shrink-0" />;
+                      etiqueta = "En revisión";
+                      celdaClase = "border-2 border-dashed border-amber-600 bg-amber-100 font-semibold text-amber-900";
                     } else {
-                      botonClase =
-                        "bg-slate-100 text-slate-800 border border-slate-300/80 cursor-not-allowed font-semibold opacity-90";
                       etiqueta = "Pasado";
-                      icono = <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />;
+                      celdaClase = "border border-dotted border-slate-300 font-medium text-slate-500";
                     }
 
+                    const contenido = (
+                      <>
+                        <IconoEstado estado={etiqueta} />
+                        <span className="[overflow-wrap:anywhere]">{etiqueta}</span>
+                      </>
+                    );
+
                     return (
-                      <td
-                        key={`${losa.id_l}-${horario}`}
-                        className="p-1.5 border-r border-slate-100 last:border-r-0 text-center"
-                      >
-                        <button
-                          type="button"
-                          className={`group w-full h-9 rounded-xl px-2 text-xs flex items-center justify-center gap-1.5 transition-all duration-150 active:scale-95 ${botonClase}`}
-                          disabled={estado !== "Disponible"}
-                          onClick={() => toggleEstado(losa.id_l, horario)}
-                        >
-                          {icono}
-                          <span>{etiqueta}</span>
-                        </button>
+                      <td key={`${losa.id_l}-${horario}`} className="p-0">
+                        {estado === "Disponible" ? (
+                          <button
+                            type="button"
+                            aria-pressed={seleccionado}
+                            className={`flex min-h-13 w-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md p-1 text-center text-xs leading-tight transition sm:text-[0.8125rem] ${celdaClase}`}
+                            onClick={() => toggleEstado(losa.id_l, horario)}
+                          >
+                            {contenido}
+                          </button>
+                        ) : (
+                          <span
+                            className={`flex min-h-13 w-full flex-col items-center justify-center gap-0.5 rounded-md p-1 text-center text-xs leading-tight sm:text-[0.8125rem] ${celdaClase}`}
+                          >
+                            {contenido}
+                          </span>
+                        )}
                       </td>
                     );
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Modal de confirmación simple */}

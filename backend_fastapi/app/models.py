@@ -230,3 +230,16 @@ class ReporteGenerado(Base):
     )
     created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())
+
+
+class PrediccionOcupacion(Base):
+    __tablename__ = "prediccion_ocupacion"
+
+    fecha: Mapped[date] = mapped_column(Date, primary_key=True)
+    hora: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    id_l: Mapped[int] = mapped_column(
+        ForeignKey("losas.id_l", ondelete="CASCADE"), primary_key=True
+    )
+    probabilidad: Mapped[Decimal] = mapped_column(Numeric(4, 3))
+    modelo_version: Mapped[str] = mapped_column(String(60))
+    generado_en: Mapped[datetime | None] = mapped_column(DateTime, server_default=func.now())

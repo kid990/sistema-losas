@@ -27,6 +27,7 @@ from app.modules.disciplinas.router import router as disciplinas_router
 from app.modules.imagenes.router import router as imagenes_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.losas.router import router as losas_router
+from app.modules.ml.router import router as ml_router
 from app.modules.notificaciones.router import router as notificaciones_router
 from app.modules.permisos.router import router as permisos_router
 from app.modules.reniec.router import router as reniec_router
@@ -178,6 +179,7 @@ for router in (
     permisos_router,
     disciplinas_router,
     losas_router,
+    ml_router,
     imagenes_router,
     configuracion_router,
     dias_router,
